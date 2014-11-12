@@ -1,6 +1,8 @@
 # This file contains a calculator for basic cosmological calculations 
 # similar to Ned Wrigths' calulator: 
 # http://www.astro.ucla.edu/~wright/CosmoCalc.html 
+# or http://arxiv.org/pdf/astro-ph/0609593v2.pdf
+# aka A Cosmology Calculator for the World Wide Web
 # See also, http://arxiv.org/pdf/astro-ph/9905116v4.pdf 
 # for a review of the formulas used. 
 # Or Distance measures in Cosmology, David W. Hogg
@@ -33,11 +35,7 @@ class CosmoCalc(object):
     def E(self, z):
         return sqrt(self.O_V + self.O_R * (1+z)**4 +
                 self.O_M * (1+z)**3 + (1-self.O_tot) * (1+z)**2)
-    # Helper function
-    #def X(self, a):
-    #    return self.O_M / a + self.O_R / a**2 + \ 
-    #            self.O_V * a**2 + 1 - self.O_tot
-    
+
     # Helper function, Z = int (dz/E, 0, z)
     def Z(self, z):
         integral = integrate.quad(lambda x: 1.0/self.E(x), 0, z)
@@ -98,7 +96,8 @@ class CosmoCalc(object):
         root = sqrt(abs(1-self.O_tot))
         
         if z2 is None:
-            return self.D_H * self.S_k((root) * self.Z(z))/((1+z) * root)
+            return self.D_H * self.S_k((root) * self.Z(z))/ \
+                    ((1+z) * root)
         elif (self.O_V + self.O_M <= 1.0):
             return 1.0 / (1.0 + z2) * \
                     ( self.D_M(z2) * sqrt(1 + (1 - O_k) *\
@@ -134,7 +133,8 @@ class CosmoCalc(object):
     #    age = integrate.quad(lambda a: 1.0/self.D(a), 0.0, 1.0/(1.0+z))
      #   return self.convert_to_gy(age[0]/H_0)
     def age_of_universe(self, z):
-        age = integrate.quad(lambda x: 1.0/((1+x)*self.E(x)), z, numpy.inf)
+        age = integrate.quad(lambda x: 1.0/((1+x)*self.E(x)) \
+                , z, numpy.inf)
         return age[0] * self.t_H
 
     # Light travel time [s * Mpc/km]:
