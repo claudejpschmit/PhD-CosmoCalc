@@ -29,10 +29,20 @@ class CosmoCalc(object):
  ############################################
     
     # Helper function, denominator for various integrals
+    # E(z) 
     def E(self, z):
         return sqrt(self.O_V + self.O_R * (1+z)**4 +
                 self.O_M * (1+z)**3 + (1-self.O_tot) * (1+z)**2)
-
+    # Helper function
+    #def X(self, a):
+    #    return self.O_M / a + self.O_R / a**2 + \ 
+    #            self.O_V * a**2 + 1 - self.O_tot
+    
+    # Helper function, Z = int (dz/E, 0, z)
+    def Z(self, z):
+        integral = integrate.quad(lambda x: 1.0/self.E(x), 0, z)
+        return integral[0]
+    
     # Curvature term in the metric:
     #   sinh x, x or sin x 
     def S_k(self, x):
@@ -55,12 +65,14 @@ class CosmoCalc(object):
 
     # Comoving distance (line of sight) [Mpc], 
     #   aka. Comoving radial distance (D_now):
-    #   D_C = D_H int(dz / E(z),0,z)
+    #   D_C = D_H int(dz / E(z),0,z) = D_H * Z = cZ/H_0
     def comoving_radial_dist(self, z):
-        integral = integrate.quad(lambda x: 1.0/self.E(x), 0, z)
-        return self.hubble_dist() * integral[0]
+        return self.hubble_dist() * self.Z(z)
     def D_C(self, z):
         return self.comoving_radial_dist(z)
+    def D_now(self, z):
+        return self.comoving_radial_dist(z)
+
 
     # Comoving distance (transverse) [Mpc],
     #   aka. Proper motion distance:
@@ -81,12 +93,12 @@ class CosmoCalc(object):
     #   formula only holds for O_tot <= 1:
     #   D_A12 = 1/(1+z_2) * (D_M2 sqrt(1+(1-O_tot) D_M1^2/D_H^2) -
     #                       D_M1 sqrt(1+(1-O_tot) D_M2^2/D_H^2) )
-    def ang_diam2(self, z):
-        pass    
     def angular_diam_dist(self, z, z2 = None):
         O_k = 1-self.O_M-self.O_V
+        root = sqrt(abs(1-self.O_tot))
+        
         if z2 is None:
-            return self.D_M(z) / (1.0 + z)
+            return self.D_H * self.S_k((root) * self.Z(z))/((1+z) * root)
         elif (self.O_V + self.O_M <= 1.0):
             return 1.0 / (1.0 + z2) * \
                     ( self.D_M(z2) * sqrt(1 + (1 - O_k) *\
@@ -107,36 +119,15 @@ class CosmoCalc(object):
         return self.luminosity_dist(z)
 
     # Comoving Volume [Mpc^3]:
+    #   V_C = int D_H (1+z)^2 * D_A^2 / E(z) dOmega dz
     def comoving_volume(self, z):
-        O_k = 1-self.O_M-self.O_V
-        if (self.O_V + self.O_M < 1.0):
-            return 4.0 * pi * self.D_H**3 / (2 * (1-O_k)) * \
-                   (self.D_M(z)/self.D_H * \
-                   sqrt(1 + (1 - O_k) * self.D_M(z)**2 / \
-                   self.D_H**2) - 1 / sqrt(abs(1-O_k)) * \
-                   asinh(sqrt(abs(1-O_k)) * self.D_M(z) / \
-                   self.D_H))
-        elif (self.O_V + self.O_M == 1.0):
-            return 4.0 * pi * self.D_M(z)**3 / 3.0 
-        else:
-            return 4.0 * pi * self.D_H**3 / (2 * abs(1-O_k)) * \
-                   (self.D_M(z)/self.D_H * \
-                   sqrt(1 + (1 - O_k) * self.D_M(z)**2 / \
-                   self.D_H**2) - 1 / sqrt(abs(1-O_k)) * \
-                   asin(sqrt(abs(1-O_k)) * self.D_M(z) / \
-                   self.D_H))
-    def V_C(self, z):
-        return self.comoving_volume(z)
-    def com_vol2(self,z):
         vol = 4*pi*self.D_H
         integral = integrate.quad(lambda x: (1+x)**2 * \
                 self.D_A(x)**2/self.E(x), 0, z)
         return vol*integral[0]
-
-    # Comoving volume element:
-    # dV_C = D_H (1+z)^2 * D_A^2 / E(z) dOmega dz
-    ##########
-
+    def V_C(self, z):
+        return self.comoving_volume(z)
+    
     # Age of the Universe at redshift z [s * Mpc/km]:
     #   t(z) = t_H int(dz/((1+z) E(z)), z, inf)
     #def age_of_universe(self, z):
@@ -171,7 +162,7 @@ if default.lower() == "n" or default.lower() == "no":
 
 # Output
 calc = CosmoCalc(H_0, O_M, O_V)
-print "For a Universe with H0 = %s, Omega_M = %s, Omega_V = %s and z = %s:" % (calc.H_0, calc.O_M, calc.O_V, z)
+print "For a Universe with H0 = %s, Omega_M = %s, Omega_V = %s and z = %s:\n" % (calc.H_0, calc.O_M, calc.O_V, z)
 print "It is now %s Gyr since the Big Bang." % \
         convert_to_gy(calc.age_of_universe(0))
 print "The age at redshift z was %s Gyr." % \
@@ -181,12 +172,8 @@ print "The light travel time was %s Gyr." % \
 print "The comoving radial distance is %s MPc." % \
         calc.comoving_radial_dist(z)
 vol = calc.comoving_volume(z) / 10**9
-vol2 = calc.com_vol2(z) / 10**9
 print "The comoving volume within redshift z is %s Gpc^3." % \
         vol
-print "The comoving volume using method 2 is %s Gpc^3." % \
-        vol2
-
 print "The angular size distance D_A is %s MPc." % \
         calc.angular_diam_dist(z)
 print "The luminosity distance D_L is %s MPc." % \
