@@ -10,9 +10,9 @@
 #######################################################################
 
 from math import *
-import sys
 import scipy.integrate as integrate
 import numpy
+import matplotlib.pyplot as plt
 
 class CosmoCalc(object):
     # Initializer
@@ -143,3 +143,32 @@ class CosmoCalc(object):
     #   ltt = t(0) - t(z)
     def light_travel_time(self, z):
         return self.age_of_universe(0) - self.age_of_universe(z)
+
+    # Distance based on light travel time [Mpc]
+    # D_ltt = c * (t(0) - t(z))
+    def D_ltt(self, z):
+        return self.light_travel_time(z) * self.c / 1000.0
+
+
+    ############################ Plotting ############################
+
+    def plot_distances(self):
+        normalization = self.H_0/self.c*1000
+        x = [i/100.0 for i in range(0,1000)]
+        y1 = [self.D_A(i) * normalization for i in x]
+        y2 = [self.D_L(i) * normalization for i in x]
+        y3 = [self.D_now(i) * normalization for i in x]
+        y4 = [self.D_ltt(i) * normalization for i in x]
+
+        plot1 = plt.loglog(x, y1, basex = 10, basey = 10, label = 'D_A')
+        plot2 = plt.loglog(x, y2, basex = 10, basey = 10, label = 'D_L')
+        plot3 = plt.loglog(x, y3, basex = 10, basey = 10, label = 'D_now')
+        plot4 = plt.loglog(x, y4, basex = 10, basey = 10, label = 'D_ltt')
+        plt.legend(loc = 'upper left')
+        plt.title('Cosmological Distances vs Redshift')
+        plt.xlabel('Redshift z')
+        plt.ylabel(r'$H_0 D / c$')
+        plt.ylim(0.01)
+        plt.grid(True)
+        plt.show()
+

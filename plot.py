@@ -28,3 +28,5 @@ z = args.z
 
 ################# Output ################## 
 
+calc = CosmoCalc(args.H_0, args.O_M, args.O_V)
+calc.plot_distances()
