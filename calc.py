@@ -10,7 +10,9 @@ import argparse
 
 descr = 'This program uses the Cosmology Calculator Class \
          to calculate various cosmological results including \
-         the age of the universe and various cosmological distances.'
+         the age of the universe and various cosmological distances.\n \
+         The following parameters can be entered manually, H_0, O_M, O_V,\
+         and z. Default values are assumed if nothing is entered.         '
 
 parser = argparse.ArgumentParser(description=descr)
 parser.add_argument('--version', action='version', 
