@@ -165,7 +165,7 @@ class CosmoCalc(object):
         plot3 = plt.loglog(x, y3, basex = 10, basey = 10, label = 'D_now')
         plot4 = plt.loglog(x, y4, basex = 10, basey = 10, label = 'D_ltt')
         plt.legend(loc = 'upper left')
-        plt.title('Cosmological Distances vs Redshift')
+        plt.title(r'Cosmological Distances vs Redshift for $\Omega_{tot} =$ %s' % (self.O_M + self.O_V))
         plt.xlabel('Redshift z')
         plt.ylabel(r'$H_0 D / c$')
         plt.ylim(0.01)
