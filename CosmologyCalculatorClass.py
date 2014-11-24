@@ -1,4 +1,4 @@
-#######################################################################
+######################################################################
 # This file contains a calculator for basic cosmological calculations #
 # similar to Ned Wrigths' calulator:                                  # 
 # http://www.astro.ucla.edu/~wright/CosmoCalc.html                    #
@@ -15,21 +15,106 @@ import numpy
 import matplotlib.pyplot as plt
 
 class CosmoCalc(object):
-    # Initializer
-    def __init__(self, H_0, O_M, O_V):
+    # Initializer fixes constant parameters
+    def __init__(self, H_0, O_M, O_V, T_CMB):
+        # Hubble constant H_0 [km s^-1 Mpc^-1]
         self.H_0 = H_0
+        # Hubble parameter h [ dimensionless ]
+        self.h = self.H_0 / 100
+        # Matter density
         self.O_M = O_M
+        # Vacuum density
         self.O_V = O_V
         # Fixing the radiation density in all cases
         self.O_R = 4.165E-1/self.H_0**2
         # Fixing c [m/s]
         self.c = 299792458.0
+        # Total density
         self.O_tot = self.O_M + self.O_V + self.O_R
         # Hubble distance [Mpc]
         self.D_H = self.c / (1000.0 * H_0)
         # Hubble time
         self.t_H = 1.0 / H_0
-    
+        # Boltzmann Constant [m^2 kg s^-2 K^-1]
+        self.k_b = 1.3806488 * 10E-23
+        # Ratio of spin degeneracy factors of the 
+        # 1S triplet and singlet state
+        self.ratio_g1g0 = 3
+        # Planck Constant h [m^2 kg s^-1]
+        self.h_planck = 6.62606957 * 10E-34
+        # T_* = hc/k_b Lambda_21cm [K]
+        self.T_star = self.h_planck * self.c / (self.k_b * 0.21)
+        # CMB temperature [K]
+        self.T_CMB = T_CMB
+        # T_gamma is usually set to T_CMB [K]
+        self.T_gamma = self.T_CMB 
+        # Spontaneous decay-rate of the spin-flip transition [s^-1]
+        self.A_10 = 2.85 * 10E-15
+        # Collisional Coupling scattering rates [cm^3 s^-1]
+        # between H and H 
+        self.kappa_HH = {'1' : 1.38 * 10E-13,
+                         '2' : 1.43 * 10E-13, 
+                         '5' : 4.65 * 10E-13,
+                         '10' : 2.88 * 10E-12, 
+                         '20' : 1.78 * 10E-11,
+                         '50' : 6.86 * 10E-11, 
+                         '100' : 1.19 * 10E-10,
+                         '200' : 1.75 * 10E-10, 
+                         '500' : 2.66 * 10E-10,
+                         '1000' : 3.33 * 10E-10, 
+                         '2000' : 0,
+                         '3000' : 0, 
+                         '5000' : 0,
+                         '7000' : 0, 
+                         '10000' : 0,
+                         '15000' : 0, 
+                         '20000' : 0}  
+        # between H and p
+        self.kappa_Hp = {'1' : 0.4028,
+                         '2' : 0.4517, 
+                         '5' : 0.4301,
+                         '10' : 0.3699, 
+                         '20' : 0.3172,
+                         '50' : 0.3047, 
+                         '100' : 0.3379,
+                         '200' : 0.4043, 
+                         '500' : 0.5471,
+                         '1000' : 0.7051, 
+                         '2000' : 0.9167,
+                         '3000' : 1.070, 
+                         '5000' : 1.301,
+                         '7000' : 1.480, 
+                         '10000' : 1.695,
+                         '15000' : 1.975, 
+                         '20000' : 2.201 }        
+        # between H and e
+        self.kappa_He = {'1' : 0.239,
+                         '2' : 0.337, 
+                         '5' : 0.503,
+                         '10' : 0.746, 
+                         '20' : 1.05,
+                         '50' : 1.63, 
+                         '100' : 2.26,
+                         '200' : 3.11, 
+                         '500' : 4.59,
+                         '1000' : 5.92, 
+                         '2000' : 7.15,
+                         '3000' : 7.71, 
+                         '5000' : 8.17,
+                         '7000' : 8.32, 
+                         '10000' : 8.37,
+                         '15000' : 8.29, 
+                         '20000' : 8.11 }  
+        # number densities
+        # TODO: Get right values here
+        # of Hydrogen [cm^-3]
+        self.n_H = 0.1
+        # of Protons [cm^-3]
+        self.n_p = 0.1
+        # of electrons [cm^-3]
+        self.n_e = 0.1
+
+
 #######################################################################
     
     # Helper function, denominator for various integrals
@@ -171,4 +256,17 @@ class CosmoCalc(object):
         plt.ylim(0.01)
         plt.grid(True)
         plt.show()
+
+    ####################### 21cm Stuff  ##########################
+    
+    # Total Collisional Coupling Coefficient
+    def x_c(self, T_k):
+        norm = self.T_star / (self.T_gamma * self.A_10)
+        temp_key = str(T_k)
+        res = self.n_H * self.kappa_HH[temp_key] \
+                + self.n_p * self.kappa_Hp[temp_key] \
+                + self.n_e * self.kappa_He[temp_key]
+        return res * norm
+
+
 

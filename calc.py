@@ -12,7 +12,7 @@ descr = 'This program uses the Cosmology Calculator Class \
          to calculate various cosmological results including \
          the age of the universe and various cosmological distances.\n \
          The following parameters can be entered manually, H_0, O_M, O_V,\
-         and z. Default values are assumed if nothing is entered.         '
+         z and T_CMB. Default values are assumed if nothing is entered.'
 
 parser = argparse.ArgumentParser(description=descr)
 parser.add_argument('--version', action='version', 
@@ -26,6 +26,8 @@ parser.add_argument('--O_V', metavar = 'O_V',
         type = float, default = 0.7, help = 'Vacuum density')
 parser.add_argument('--z', metavar = 'z', 
         type = float, default = 3, help = 'redshift')
+parser.add_argument('--T_CMB', metavar = 'T_CMB', 
+        type = float, default = 2.75, help = 'CMB temperature')
 
 args = parser.parse_args()
 z = args.z
@@ -36,9 +38,9 @@ z = args.z
 def convert_to_gy(age):
     return age * 10**10 * 3.08568 / (365.25 * 24 * 3600)
 
-calc = CosmoCalc(args.H_0, args.O_M, args.O_V)
+calc = CosmoCalc(args.H_0, args.O_M, args.O_V, args.T_CMB)
 
-print "\nFor a Universe with H0 = %s, Omega_M = %s, Omega_V = %s and z = %s:\n" % (calc.H_0, calc.O_M, calc.O_V, z)
+print "\nFor a Universe with H0 = %s, Omega_M = %s, Omega_V = %s, z = %s and T_CMB = %s K:\n" % (calc.H_0, calc.O_M, calc.O_V, z, calc.T_CMB)
 print "It is now %s Gyr since the Big Bang." % \
         convert_to_gy(calc.age_of_universe(0))
 print "The age at redshift z was %s Gyr." % \
