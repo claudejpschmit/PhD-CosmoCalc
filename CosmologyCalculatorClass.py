@@ -21,11 +21,11 @@ class CosmoCalc(object):
         self.H_0 = H_0
         # Hubble parameter h [ dimensionless ]
         self.h = self.H_0 / 100
-        # Matter density
+        # Relative Matter density
         self.O_M = O_M
-        # Vacuum density
+        # Relative Vacuum density
         self.O_V = O_V
-        # Fixing the radiation density in all cases
+        # Fixing the relative radiation density in all cases
         self.O_R = 4.165E-1/self.H_0**2
         # Fixing c [m/s]
         self.c = 299792458.0
@@ -42,14 +42,23 @@ class CosmoCalc(object):
         self.ratio_g1g0 = 3
         # Planck Constant h [m^2 kg s^-1]
         self.h_planck = 6.62606957 * 10E-34
+        # Gravitational constant [m^3 kg^-1 s^2]
+        self.G = 6.67384 * 10E-11
         # T_* = hc/k_b Lambda_21cm [K]
         self.T_star = self.h_planck * self.c / (self.k_b * 0.21)
         # CMB temperature [K]
         self.T_CMB = T_CMB
         # T_gamma is usually set to T_CMB [K]
         self.T_gamma = self.T_CMB 
+        # T_
         # Spontaneous decay-rate of the spin-flip transition [s^-1]
         self.A_10 = 2.85 * 10E-15
+        # Baryon density
+        self.O_b = 0.044
+        # Logarithmic tilt of the the spectrum of fluctuations
+        self.n_s = 0.95
+        # Variance of matter fluctuations today smoothed on a scale of 8 h^-1 Mpc
+        self.sigma_8 = 0.8
         # Collisional Coupling scattering rates [cm^3 s^-1]
         # between H and H 
         self.kappa_HH = {'1' : 1.38 * 10E-13,
@@ -113,7 +122,11 @@ class CosmoCalc(object):
         self.n_p = 0.1
         # of electrons [cm^-3]
         self.n_e = 0.1
-
+        
+        # Einstein Coefficients
+        self.B_10 = self.A_10 * 0.21**3 / (2 * self.h_planck * self.c)
+        self.B_01 = self.ratio_g1g0 * self.B_10
+               
 
 #######################################################################
     
@@ -233,6 +246,43 @@ class CosmoCalc(object):
     # D_ltt = c * (t(0) - t(z))
     def D_ltt(self, z):
         return self.light_travel_time(z) * self.c / 1000.0
+    
+    # Hubble constant with redshift [km * s^-1 * Mpc^-1]
+    def H(self, z):
+        return self.H_0 * self.E(z)
+    # Hubble constant in SI units [s^-1]
+    def H_SI(self, z):
+        return self.H(z) * 1000 / (3.08567758 * 10E16)
+    # critical density [kg/m^3]
+    def rho_crit(self, z):
+        return 3.0 * self.H_SI(z)**2 / (8.0 * pi * self.G)
+    # matter density [kg/m^3]
+    def rho_M(self, z):
+        rho_M_0 = self.O_M * self.rho_crit(0)
+        return rho_M_0 * (1+z)**3
+    # Radiation density [kg/m^3]
+    def rho_R(self, z):
+        rho_R_0 = self.O_R * self.rho_crit(0)
+        return rho_R_0 * (1+z)**4
+    # Vacuum density [kg/m^3] (constant in z)
+    def rho_V(self, z):
+        return self.O_V * self.rho_crit(0)
+    # Relative Matter density with redshift
+    def O_M(self, z):
+        return self.rho_M(z) / self.rho_crit(z)
+    # Relative Radiation density with redshift
+    def O_R(self, z):
+        return self.rho_R(z) / self.rho_crit(z)
+    # Relative Vacuum density with redshift
+    def O_V(self, z):
+        return self.rho_V(z) / self.rho_crit(z)
+
+    # Estimate for the number of Baryons in the Universe
+    def num_baryons(self):
+        num = 4.0/3.0 * pi * (self.c/self.H_SI(0))**3 * self.rho_crit(0)
+        m_n = 1.674927351 * 10E-27
+        return num / m_n
+    
 
 
     ############################ Plotting ############################
@@ -257,8 +307,62 @@ class CosmoCalc(object):
         plt.grid(True)
         plt.show()
 
+    def plot_densities_rho(self, zmax, step):
+        x = [float(i)/step for i in range(0,zmax)]
+        y1 = [self.rho_M(z) for z in x]
+        y2 = [self.rho_R(z) for z in x]
+        y3 = [self.rho_V(z) for z in x]
+        plot1 = plt.plot(x, y1, label = 'Rho_M')
+        plot2 = plt.plot(x, y2, label = 'Rho_R')
+        plot3 = plt.plot(x, y3, label = 'Rho_V')
+        plt.legend(loc = 'upper left')
+        plt.title(r'Densities vs Redshift' )
+        plt.xlabel('Redshift z')
+        plt.ylabel(r'$\rho$')
+        plt.grid(True)
+        plt.show()
+
+
+    ##################### Thermodynamics  ########################
+    
+    # Temperature of the universe in terms of redshift z [K]
+    def T(self, z):
+        return self.T_CMB * (1+z)
+    # Total hydrogen density, n_H + n_p [m^-3]
+    def n_H_tot (self, z):
+        return 1.6 * (1+z)**3
+
     ####################### 21cm Stuff  ##########################
     
+    #### Spin temperature Calculation ####
+    #### This is according to Chapter 9 of:
+    #### ned.ipac.caltech.edu/level5/Sept06/Loeb/Loeb_contents.html
+
+    def C_10(self, T_k):
+        # TODO: this is a function of the gas temperature?!
+        #       and what is n_H ? we have n_h prop (1+z)^3
+        # ??? self.C_10 = 4.0 / 3.0 * self.kappa_H * n_H ? 
+        pass
+    
+    def C_01(self, T_k):
+        # TODO: ??? not defined
+        pass 
+
+    def T_S (self, z, T_k):
+        I_nu = 2.0 * self.k_b * self.T_gamma / 0.21**2
+        B = self.C_01(T_k) + self.B_01 * I_nu
+        C = self.C_10(T_k) + self.A_10 + self.B_10 * I_nu
+        norm = self.H_0 * self.O_M**(0.5)
+        norm = 1.0 / norm
+        # Integration boundaries might be wrong here, check once other issues are resolved
+        I_z = integrate.quad(lambda x: norm * (1+x)**(-2.5) \
+                , z, numpy.inf)
+        Psi_z = exp((B + C) * I_z) + C / (B + C)
+        return - self.T_star * log((1.0/3.0) * (1.0/Psi_z -1))
+
+
+    ########
+
     # Total Collisional Coupling Coefficient
     def x_c(self, T_k):
         norm = self.T_star / (self.T_gamma * self.A_10)
@@ -267,6 +371,11 @@ class CosmoCalc(object):
                 + self.n_p * self.kappa_Hp[temp_key] \
                 + self.n_e * self.kappa_He[temp_key]
         return res * norm
+
+    # Wouthuysen-Field effect coupling
+    def x_alpha(self, P_alpha):
+        num = 4 * P_alpha * self.T_star
+        den = 27 * self.A_10 * self.T_gamma
 
 
 

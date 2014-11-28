@@ -33,3 +33,4 @@ z = args.z
 
 calc = CosmoCalc(args.H_0, args.O_M, args.O_V, args.T_CMB)
 calc.plot_distances()
+calc.plot_densities_rho(1000, 100)
