@@ -32,5 +32,7 @@ z = args.z
 ################# Output ################## 
 
 calc = CosmoCalc(args.H_0, args.O_M, args.O_V, args.T_CMB)
-calc.plot_distances()
-calc.plot_densities_rho(1000, 100)
+#calc.plot_distances()
+#calc.plot_densities_rho(5000, 100)
+calc.plot_densities_Omega(1000, 100)
+calc.plot_H(1000, 100)

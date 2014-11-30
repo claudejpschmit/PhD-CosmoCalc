@@ -56,3 +56,7 @@ print "The angular size distance D_A is %s MPc." % \
         calc.angular_diam_dist(z)
 print "The luminosity distance D_L is %s MPc." % \
         calc.luminosity_dist(z)
+
+
+print "---------------\n"
+print calc.Omega_M(1)

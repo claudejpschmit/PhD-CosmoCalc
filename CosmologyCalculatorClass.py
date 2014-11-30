@@ -268,14 +268,17 @@ class CosmoCalc(object):
     def rho_V(self, z):
         return self.O_V * self.rho_crit(0)
     # Relative Matter density with redshift
-    def O_M(self, z):
-        return self.rho_M(z) / self.rho_crit(z)
+    def Omega_M(self, z):
+        #return self.rho_M(z) / self.rho_crit(z)
+        return self.O_M * (1+z)**3 / self.E(z)**2
     # Relative Radiation density with redshift
-    def O_R(self, z):
-        return self.rho_R(z) / self.rho_crit(z)
+    def Omega_R(self, z):
+        #return self.rho_R(z) / self.rho_crit(z)
+        return self.O_R * (1+z)**4 / self.E(z)**2
     # Relative Vacuum density with redshift
-    def O_V(self, z):
-        return self.rho_V(z) / self.rho_crit(z)
+    def Omega_V(self, z):
+        #return self.rho_V(z) / self.rho_crit(z)
+        return self.O_V / self.E(z)**2
 
     # Estimate for the number of Baryons in the Universe
     def num_baryons(self):
@@ -295,31 +298,69 @@ class CosmoCalc(object):
         y3 = [self.D_now(i) * normalization for i in x]
         y4 = [self.D_ltt(i) * normalization for i in x]
 
-        plot1 = plt.loglog(x, y1, basex = 10, basey = 10, label = 'D_A')
-        plot2 = plt.loglog(x, y2, basex = 10, basey = 10, label = 'D_L')
-        plot3 = plt.loglog(x, y3, basex = 10, basey = 10, label = 'D_now')
-        plot4 = plt.loglog(x, y4, basex = 10, basey = 10, label = 'D_ltt')
+        plot1 = plt.loglog(x, y1, basex = 10, basey = 10, label = r'$D_A$')
+        plot2 = plt.loglog(x, y2, basex = 10, basey = 10, label = r'$D_L$')
+        plot3 = plt.loglog(x, y3, basex = 10, basey = 10, label = r'$D_{now}$')
+        plot4 = plt.loglog(x, y4, basex = 10, basey = 10, label = r'$D_{ltt}$')
         plt.legend(loc = 'upper left')
         plt.title(r'Cosmological Distances vs Redshift for $\Omega_{tot} =$ %s' % (self.O_M + self.O_V))
         plt.xlabel('Redshift z')
         plt.ylabel(r'$H_0 D / c$')
         plt.ylim(0.01)
         plt.grid(True)
+        
+        plt.savefig('distances.png')
         plt.show()
 
     def plot_densities_rho(self, zmax, step):
-        x = [float(i)/step for i in range(0,zmax)]
+        maxrange = zmax * step
+        x = [float(i)/step for i in range(0,maxrange)]
         y1 = [self.rho_M(z) for z in x]
         y2 = [self.rho_R(z) for z in x]
         y3 = [self.rho_V(z) for z in x]
-        plot1 = plt.plot(x, y1, label = 'Rho_M')
-        plot2 = plt.plot(x, y2, label = 'Rho_R')
-        plot3 = plt.plot(x, y3, label = 'Rho_V')
+        plot1 = plt.plot(x, y1, label = r'$\rho_M$')
+        plot2 = plt.plot(x, y2, label = r'$\rho_R$')
+        plot3 = plt.plot(x, y3, label = r'$\rho_V$')
         plt.legend(loc = 'upper left')
         plt.title(r'Densities vs Redshift' )
         plt.xlabel('Redshift z')
         plt.ylabel(r'$\rho$')
         plt.grid(True)
+
+        plt.savefig('densities.png')
+        plt.show()
+    
+    def plot_densities_Omega(self, zmax, step):
+        maxrange = zmax * step
+        x = [float(i)/step for i in range(0, maxrange)]
+        y1 = [self.Omega_M(z) for z in x]
+        y2 = [self.Omega_R(z) for z in x]
+        y3 = [self.Omega_V(z) for z in x]
+        plot1 = plt.plot(x, y1, label = r'$\Omega_M$')
+        plot2 = plt.plot(x, y2, label = r'$\Omega_R$')
+        plot3 = plt.plot(x, y3, label = r'$\Omega_V$')
+        plt.legend(loc = 'upper left')
+        plt.title(r'Relative Densities vs Redshift' )
+        plt.xlabel('Redshift z')
+        plt.ylabel(r'$\Omega$')
+        plt.grid(True)
+        plt.xscale('log')
+
+        plt.savefig('relative_densities.png')
+        plt.show()
+
+    def plot_H(self, zmax, step):
+        maxrange = zmax * step
+        x = [float(i)/step for i in range(0, maxrange)]
+        y1 = [self.H(z)/100.0 for z in x]
+        plot1 = plt.plot(x, y1, label = r'$h$')
+        plt.legend(loc = 'upper left')
+        plt.title(r'Hubble parameter $h$ vs Redshift' )
+        plt.xlabel('Redshift $z$')
+        plt.ylabel(r'$h$')
+        plt.grid(True)
+
+        plt.savefig('hubble_parameter.png')
         plt.show()
 
 
