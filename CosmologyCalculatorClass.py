@@ -143,10 +143,13 @@ class CosmoCalc(object):
                
         # Oscillator strength of the Lyalpha transition
         self.f_alpha = 0.4162
+        # TODO: figure out S_alpha
+        self.S_alpha = 1.0
 
         # Reionization regime
         self.delta_z = 4.0
         self.z_rei = 10.0
+        self.z_CMB = 1100
 #######################################################################
     
     # Helper function, denominator for various integrals
@@ -356,10 +359,10 @@ class CosmoCalc(object):
         pass
     # TODO: the color temperature of the surrounding bath of radio photons
     def T_alpha(self, z):
-        pass
+        return self.T_k(z)
     # TODO: the gas kinetic temperature
     def T_k(self, z):
-        pass
+        return self.T_CMB * (1 + self.z_CMB) * ((1+z)/(1+self.z_CMB))**2 + 0.5 * 10**4 * (tanh(z-self.z_CMB/self.z_CMB) + 1)
 
 
     def T_S (self, z):
@@ -377,14 +380,16 @@ class CosmoCalc(object):
         return res * norm
 
     # Wouthuysen-Field effect coupling
-    def x_alpha(self, P_alpha):
+    def x_alpha(self, z):
         num = 16 * pi**2 * self.T_star * self.e**2 * self.f_alpha * \
                 self.S_alpha * self.J_alpha(z)
         den = 27 * self.A_10 * self.T_gamma * self.m_e * self.c
         return num / den
 
     def J_alpha(self, z):
-        pass
+        prefactor = 1.165 * 10**12 * (1+z)
+        return  0.5 * prefactor * (tanh(z-self.z_CMB/self.z_CMB) + 1)
+
     ############################ Plotting ############################
 
     def plot_distances(self):
@@ -593,7 +598,16 @@ class CosmoCalc(object):
         plt.savefig('T_b.png')
         plt.show()
 
-
-    
-
-
+    def plot_T_k(self, zmin, zmax, step):
+        stepsize = (zmax - zmin) / float(step)
+        x = [zmin + float(i) * stepsize for i in range(0, step)]
+        y1 = [self.T_k(z) for z in x]
+        plot1 = plt.plot(x, y1, label = r'$T_k$')
+        plt.legend(loc = 'upper left')
+        plt.title(r'$T_k$ vs $z$' )
+        plt.xlabel(r'$z$')
+        plt.ylabel(r'$T_k$')
+        plt.grid(True)
+        
+        plt.savefig('T_k.png')
+        plt.show()
