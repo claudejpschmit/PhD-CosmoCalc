@@ -11,7 +11,8 @@
 
 from math import *
 import scipy.integrate as integrate
-import numpy
+import scipy.interpolate as interpolate
+import numpy as np
 import matplotlib.pyplot as plt
 
 class CosmoCalc(object):
@@ -36,7 +37,14 @@ class CosmoCalc(object):
         # Hubble time
         self.t_H = 1.0 / H_0
         # Boltzmann Constant [m^2 kg s^-2 K^-1]
-        self.k_b = 1.3806488 * 10E-23
+        self.k_b = 1.3806488 * 10**(-23)
+        # Baryon mass (mass of neutron) [kg]
+        self.m_b = 1.674927351 * 10**(-27)
+        # Electron mass [kg]
+        self.m_e = 9.10938291 * 10**(-31)
+        # Charge of electron [Coulomb]
+        self.e = 1.60217657 * 10**(-19)
+
         # Ratio of spin degeneracy factors of the 
         # 1S triplet and singlet state
         self.ratio_g1g0 = 3
@@ -59,27 +67,32 @@ class CosmoCalc(object):
         self.n_s = 0.95
         # Variance of matter fluctuations today smoothed on a scale of 8 h^-1 Mpc
         self.sigma_8 = 0.8
+        
         # Collisional Coupling scattering rates [cm^3 s^-1]
         # between H and H 
-        self.kappa_HH = {'1' : 1.38 * 10E-13,
-                         '2' : 1.43 * 10E-13, 
-                         '5' : 4.65 * 10E-13,
-                         '10' : 2.88 * 10E-12, 
-                         '20' : 1.78 * 10E-11,
-                         '50' : 6.86 * 10E-11, 
-                         '100' : 1.19 * 10E-10,
-                         '200' : 1.75 * 10E-10, 
-                         '500' : 2.66 * 10E-10,
-                         '1000' : 3.33 * 10E-10, 
-                         '2000' : 0,
-                         '3000' : 0, 
-                         '5000' : 0,
-                         '7000' : 0, 
-                         '10000' : 0,
-                         '15000' : 0, 
-                         '20000' : 0}  
+        kappa_HH = {'1' : 1.38 * 1E-13,
+                 '2' : 1.43 * 1E-13, 
+                 '5' : 4.65 * 1E-13,
+                 '10' : 2.88 * 1E-12, 
+                 '20' : 1.78 * 1E-11,
+                 '50' : 6.86 * 1E-11, 
+                 '100' : 1.19 * 1E-10,
+                 '200' : 1.75 * 1E-10, 
+                 '500' : 2.66 * 1E-10,
+                 '1000' : 3.33 * 1E-10, 
+                 '2000' : 0,
+                 '3000' : 0, 
+                 '5000' : 0,
+                 '7000' : 0, 
+                 '10000' : 0,
+                 '15000' : 0, 
+                 '20000' : 0}  
+        x = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]
+        y = [kappa_HH[str(i)] for i in x]
+        self.kappa_HH = interpolate.interp1d(x, y)
+
         # between H and p
-        self.kappa_Hp = {'1' : 0.4028,
+        kappa_Hp = {'1' : 0.4028,
                          '2' : 0.4517, 
                          '5' : 0.4301,
                          '10' : 0.3699, 
@@ -95,9 +108,15 @@ class CosmoCalc(object):
                          '7000' : 1.480, 
                          '10000' : 1.695,
                          '15000' : 1.975, 
-                         '20000' : 2.201 }        
+                         '20000' : 2.201 }   
+        x = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000,
+                3000, 5000, 7000, 10000, 15000, 20000]
+        y = [kappa_Hp[str(i)] for i in x]
+        self.kappa_Hp = interpolate.interp1d(x, y)
+
+
         # between H and e
-        self.kappa_He = {'1' : 0.239,
+        kappa_He = {'1' : 0.239,
                          '2' : 0.337, 
                          '5' : 0.503,
                          '10' : 0.746, 
@@ -114,20 +133,20 @@ class CosmoCalc(object):
                          '10000' : 8.37,
                          '15000' : 8.29, 
                          '20000' : 8.11 }  
-        # number densities
-        # TODO: Get right values here
-        # of Hydrogen [cm^-3]
-        self.n_H = 0.1
-        # of Protons [cm^-3]
-        self.n_p = 0.1
-        # of electrons [cm^-3]
-        self.n_e = 0.1
-        
+        y = [kappa_He[str(i)] for i in x]
+        self.kappa_He = interpolate.interp1d(x, y)
+
+ 
         # Einstein Coefficients
         self.B_10 = self.A_10 * 0.21**3 / (2 * self.h_planck * self.c)
         self.B_01 = self.ratio_g1g0 * self.B_10
                
+        # Oscillator strength of the Lyalpha transition
+        self.f_alpha = 0.4162
 
+        # Reionization regime
+        self.delta_z = 4.0
+        self.z_rei = 10.0
 #######################################################################
     
     # Helper function, denominator for various integrals
@@ -234,7 +253,7 @@ class CosmoCalc(object):
      #   return self.convert_to_gy(age[0]/H_0)
     def age_of_universe(self, z):
         age = integrate.quad(lambda x: 1.0/((1+x)*self.E(x)) \
-                , z, numpy.inf)
+                , z, np.inf)
         return age[0] * self.t_H
 
     # Light travel time [s * Mpc/km]:
@@ -283,11 +302,89 @@ class CosmoCalc(object):
     # Estimate for the number of Baryons in the Universe
     def num_baryons(self):
         num = 4.0/3.0 * pi * (self.c/self.H_SI(0))**3 * self.rho_crit(0)
-        m_n = 1.674927351 * 10E-27
-        return num / m_n
+        return num / self.m_b
     
+    # Neutral fraction x_HI
+    def x_HI(self, z, delta_z, z_reionization):
+        return 0.5 * (tanh((z-z_reionization) / delta_z) + 1)
+
+    ##################### Thermodynamics  ########################
+    
+    # Temperature of the universe in terms of redshift z [K]
+    def T(self, z):
+        return self.T_CMB * (1+z)
+    ''' # Total hydrogen density, n_H + n_p [m^-3]
+    def n_H_tot (self, z):
+        return 1.6 * (1+z)**3
+    '''
+    # Number densities [m^-3]
+    # baryon density
+    def n_b(self, z):
+        return self.O_b * self.rho_crit(z) / self.m_b
+    # hydrogen density
+    # TODO: this has a coefficient that is only approximately 1.
+    def n_H(self, z):
+        coeff = 1.0 
+        return coeff * self.n_b(z)
+    # (free) proton density
+    def n_p(self, z):
+        return self.x_HI(z, self.delta_z, self.z_rei)
+    # (free) electron density
+    def n_e(self, z):
+        return self.n_p(z)
+
+    ####################### 21cm Stuff  ##########################
+
+    # Oth order brighness temperature [mK]
+    def T_b_0th_Order(self, z):
+        norm = 27 * self.O_b * self.h**2 / 0.023 * sqrt(0.15 / (10 * self.O_M * self.h**2))
+        spinTemp = (self.T_S(z) - self.T_CMB)/self.T_S(z)
+        return norm * self.x_HI(z, self.delta_z, self.z_rei) * (1+z)**0.5  
+
+    #### Spin temperature Calculation ####
+    #### This is according to Chapter 9 of:
+    #### ned.ipac.caltech.edu/level5/Sept06/Loeb/Loeb_contents.html
+
+    def C_10(self, T_k):
+        # TODO: this is a function of the gas temperature?!
+        #       and what is n_H ? we have n_h prop (1+z)^3
+        # ??? self.C_10 = 4.0 / 3.0 * self.kappa_H * n_H ? 
+        pass
+    
+    def C_01(self, T_k):
+        # TODO: ??? not defined
+        pass
+    # TODO: the color temperature of the surrounding bath of radio photons
+    def T_alpha(self, z):
+        pass
+    # TODO: the gas kinetic temperature
+    def T_k(self, z):
+        pass
 
 
+    def T_S (self, z):
+        num = 1 + self.x_alpha(z) + self.x_c(z)
+        den = 1.0/self.T_gamma + self.x_alpha(z)/self.T_alpha(z) + self.x_c(z)/self.T_k(z)
+        return num / den
+
+    ########
+    # Total Collisional Coupling Coefficient
+    def x_c(self, z):
+        norm = self.T_star / (self.T_gamma * self.A_10)
+        res = self.n_H(z) * self.kappa_HH(self.T_k(z))\
+                + self.n_p(z) * self.kappa_Hp(self.T_k(z)) \
+                + self.n_e(z) * self.kappa_He(self.T_k(z))
+        return res * norm
+
+    # Wouthuysen-Field effect coupling
+    def x_alpha(self, P_alpha):
+        num = 16 * pi**2 * self.T_star * self.e**2 * self.f_alpha * \
+                self.S_alpha * self.J_alpha(z)
+        den = 27 * self.A_10 * self.T_gamma * self.m_e * self.c
+        return num / den
+
+    def J_alpha(self, z):
+        pass
     ############################ Plotting ############################
 
     def plot_distances(self):
@@ -362,61 +459,141 @@ class CosmoCalc(object):
 
         plt.savefig('hubble_parameter.png')
         plt.show()
+        
+    def plot_x_HI(self, zmax, step):
+        maxrange = zmax * step
+        x = [float(i)/step for i in range(0, maxrange)]
+        y1 = [self.x_HI(z, 0.5, 10) for z in x]
+        plot1 = plt.plot(x, y1, label = r'$x_{HI}$')
+        plt.legend(loc = 'upper left')
+        plt.title(r'Neutral fraction $x_{HI}$ vs Redshift' )
+        plt.xlabel(r'Redshift $z$')
+        plt.ylabel(r'$h$')
+        plt.grid(True)
 
+        plt.savefig('x_HI.png')
+        plt.show()
 
-    ##################### Thermodynamics  ########################
     
-    # Temperature of the universe in terms of redshift z [K]
-    def T(self, z):
-        return self.T_CMB * (1+z)
-    # Total hydrogen density, n_H + n_p [m^-3]
-    def n_H_tot (self, z):
-        return 1.6 * (1+z)**3
+    def plot_kappa_HH(self, T_k_min, T_k_max, step):
+        points = {'1' : 1.38 * 10**(-13),
+                 '2' : 1.43 * 10**(-13), 
+                 '5' : 4.65 * 10**(-13),
+                 '10' : 2.88 * 10**(-12), 
+                 '20' : 1.78 * 10**(-11),
+                 '50' : 6.86 * 10**(-11), 
+                 '100' : 1.19 * 10**(-10),
+                 '200' : 1.75 * 10**(-10), 
+                 '500' : 2.66 * 10**(-10),
+                 '1000' : 3.33 * 10**(-10), 
+                 }  
+        x2 = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]
+        y2 = [points[str(i)] for i in x2]
+        stepsize = (T_k_max - T_k_min) / float(step)
+        x = [T_k_min + float(i) * stepsize for i in range(0, step)]
+        y1 = [self.kappa_HH(T_k) for T_k in x]
+        #for y in y1:
+        #    print y
+        plot1 = plt.plot(x, y1, label = r'$\kappa_{1-0}^{HH}$')
+        plot2 = plt.plot(x2, y2, 'ro',label = r'data')
+        plt.legend(loc = 'upper left')
+        plt.title(r'$\kappa_{1-0}^{HH}$ vs $T_k$' )
+        plt.xlabel(r'$T_k$')
+        plt.ylabel(r'$\kappa_{1-0}^{HH}$')
+        plt.grid(True)
 
-    ####################### 21cm Stuff  ##########################
+        plt.savefig('kappa_HH.png')
+        plt.show()
+
+    def plot_kappa_Hp(self, T_k_min, T_k_max, step):
+        points = {'1' : 0.4028,
+                         '2' : 0.4517, 
+                         '5' : 0.4301,
+                         '10' : 0.3699, 
+                         '20' : 0.3172,
+                         '50' : 0.3047, 
+                         '100' : 0.3379,
+                         '200' : 0.4043, 
+                         '500' : 0.5471,
+                         '1000' : 0.7051, 
+                         '2000' : 0.9167,
+                         '3000' : 1.070, 
+                         '5000' : 1.301,
+                         '7000' : 1.480, 
+                         '10000' : 1.695,
+                         '15000' : 1.975, 
+                         '20000' : 2.201 }   
+        x2 = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000,
+                3000, 5000, 7000, 10000, 15000, 20000]
+        y2 = [points[str(i)] for i in x2]
+        stepsize = (T_k_max - T_k_min) / float(step)
+        x = [T_k_min + float(i) * stepsize for i in range(0, step)]
+        y1 = [self.kappa_Hp(T_k) for T_k in x]
+        #for y in y1:
+        #    print y
+        plot1 = plt.plot(x, y1, label = r'$\kappa_{1-0}^{Hp}$')
+        plot2 = plt.plot(x2, y2, 'ro',label = r'data')
+        plt.legend(loc = 'upper left')
+        plt.title(r'$\kappa_{1-0}^{Hp}$ vs $T_k$' )
+        plt.xlabel(r'$T_k$')
+        plt.ylabel(r'$\kappa_{1-0}^{Hp}$')
+        plt.grid(True)
+        
+        plt.savefig('kappa_Hp.png')
+        plt.show()
+
+    def plot_kappa_He(self, T_k_min, T_k_max, step):
+        points = {'1' : 0.239,
+                         '2' : 0.337, 
+                         '5' : 0.503,
+                         '10' : 0.746, 
+                         '20' : 1.05,
+                         '50' : 1.63, 
+                         '100' : 2.26,
+                         '200' : 3.11, 
+                         '500' : 4.59,
+                         '1000' : 5.92, 
+                         '2000' : 7.15,
+                         '3000' : 7.71, 
+                         '5000' : 8.17,
+                         '7000' : 8.32, 
+                         '10000' : 8.37,
+                         '15000' : 8.29, 
+                         '20000' : 8.11 }  
+        x2 = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000,
+                3000, 5000, 7000, 10000, 15000, 20000]
+        y2 = [points[str(i)] for i in x2]
+        stepsize = (T_k_max - T_k_min) / float(step)
+        x = [T_k_min + float(i) * stepsize for i in range(0, step)]
+        y1 = [self.kappa_He(T_k) for T_k in x]
+        #for y in y1:
+        #    print y
+        plot1 = plt.plot(x, y1, label = r'$\kappa_{1-0}^{He}$')
+        plot2 = plt.plot(x2, y2, 'ro',label = r'data')
+        plt.legend(loc = 'upper left')
+        plt.title(r'$\kappa_{1-0}^{He}$ vs $T_k$' )
+        plt.xlabel(r'$T_k$')
+        plt.ylabel(r'$\kappa_{1-0}^{He}$')
+        plt.grid(True)
+        
+        plt.savefig('kappa_He.png')
+        plt.show()
+
+    def plot_T_b(self, zmin, zmax, step):
+        stepsize = (zmax - zmin) / float(step)
+        x = [zmin + float(i) * stepsize for i in range(0, step)]
+        y1 = [self.T_b_0th_Order(z) for z in x]
+        plot1 = plt.plot(x, y1, label = r'$T_b$')
+        plt.legend(loc = 'upper left')
+        plt.title(r'$T_b$ vs $z$' )
+        plt.xlabel(r'$z$')
+        plt.ylabel(r'$T_b$')
+        plt.grid(True)
+        
+        plt.savefig('T_b.png')
+        plt.show()
+
+
     
-    #### Spin temperature Calculation ####
-    #### This is according to Chapter 9 of:
-    #### ned.ipac.caltech.edu/level5/Sept06/Loeb/Loeb_contents.html
-
-    def C_10(self, T_k):
-        # TODO: this is a function of the gas temperature?!
-        #       and what is n_H ? we have n_h prop (1+z)^3
-        # ??? self.C_10 = 4.0 / 3.0 * self.kappa_H * n_H ? 
-        pass
-    
-    def C_01(self, T_k):
-        # TODO: ??? not defined
-        pass 
-
-    def T_S (self, z, T_k):
-        I_nu = 2.0 * self.k_b * self.T_gamma / 0.21**2
-        B = self.C_01(T_k) + self.B_01 * I_nu
-        C = self.C_10(T_k) + self.A_10 + self.B_10 * I_nu
-        norm = self.H_0 * self.O_M**(0.5)
-        norm = 1.0 / norm
-        # Integration boundaries might be wrong here, check once other issues are resolved
-        I_z = integrate.quad(lambda x: norm * (1+x)**(-2.5) \
-                , z, numpy.inf)
-        Psi_z = exp((B + C) * I_z) + C / (B + C)
-        return - self.T_star * log((1.0/3.0) * (1.0/Psi_z -1))
-
-
-    ########
-
-    # Total Collisional Coupling Coefficient
-    def x_c(self, T_k):
-        norm = self.T_star / (self.T_gamma * self.A_10)
-        temp_key = str(T_k)
-        res = self.n_H * self.kappa_HH[temp_key] \
-                + self.n_p * self.kappa_Hp[temp_key] \
-                + self.n_e * self.kappa_He[temp_key]
-        return res * norm
-
-    # Wouthuysen-Field effect coupling
-    def x_alpha(self, P_alpha):
-        num = 4 * P_alpha * self.T_star
-        den = 27 * self.A_10 * self.T_gamma
-
 
 

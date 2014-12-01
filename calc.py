@@ -60,3 +60,5 @@ print "The luminosity distance D_L is %s MPc." % \
 
 print "---------------\n"
 print calc.Omega_M(1)
+
+print calc.kappa_HH(599)
