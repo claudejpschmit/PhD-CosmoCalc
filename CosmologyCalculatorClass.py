@@ -12,6 +12,7 @@
 from math import *
 import scipy.integrate as integrate
 import scipy.interpolate as interpolate
+from sympy import Symbol
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -49,9 +50,9 @@ class CosmoCalc(object):
         # 1S triplet and singlet state
         self.ratio_g1g0 = 3
         # Planck Constant h [m^2 kg s^-1]
-        self.h_planck = 6.62606957 * 10E-34
+        self.h_planck = 6.62606957 * 10**(-34)
         # Gravitational constant [m^3 kg^-1 s^2]
-        self.G = 6.67384 * 10E-11
+        self.G = 6.67384 * 10**(-11)
         # T_* = hc/k_b Lambda_21cm [K]
         self.T_star = self.h_planck * self.c / (self.k_b * 0.21)
         # CMB temperature [K]
@@ -60,7 +61,7 @@ class CosmoCalc(object):
         self.T_gamma = self.T_CMB 
         # T_
         # Spontaneous decay-rate of the spin-flip transition [s^-1]
-        self.A_10 = 2.85 * 10E-15
+        self.A_10 = 2.85 * 10**(-15)
         # Baryon density
         self.O_b = 0.044
         # Logarithmic tilt of the the spectrum of fluctuations
@@ -316,10 +317,10 @@ class CosmoCalc(object):
     # Temperature of the universe in terms of redshift z [K]
     def T(self, z):
         return self.T_CMB * (1+z)
-    ''' # Total hydrogen density, n_H + n_p [m^-3]
+    # Total hydrogen density, n_H + n_p [m^-3]
     def n_H_tot (self, z):
         return 1.6 * (1+z)**3
-    '''
+
     # Number densities [m^-3]
     # baryon density
     def n_b(self, z):
@@ -341,8 +342,8 @@ class CosmoCalc(object):
     # Oth order brighness temperature [mK]
     def T_b_0th_Order(self, z):
         norm = 27 * self.O_b * self.h**2 / 0.023 * sqrt(0.15 / (10 * self.O_M * self.h**2))
-        spinTemp = (self.T_S(z) - self.T_CMB)/self.T_S(z)
-        return norm * self.x_HI(z, self.delta_z, self.z_rei) * (1+z)**0.5  
+        spinTemp = (self.T_S(z) - self.T(z))/self.T_S(z)
+        return norm * self.x_HI(z, self.delta_z, self.z_rei) * (1+z)**0.5 * spinTemp 
 
     #### Spin temperature Calculation ####
     #### This is according to Chapter 9 of:
@@ -362,7 +363,7 @@ class CosmoCalc(object):
         return self.T_k(z)
     # TODO: the gas kinetic temperature
     def T_k(self, z):
-        return self.T_CMB * (1 + self.z_CMB) * ((1+z)/(1+self.z_CMB))**2 + 0.5 * 10**4 * (tanh(z-self.z_CMB/self.z_CMB) + 1)
+        return self.T_CMB * (1 + self.z_CMB) * ((1+z)/(1+self.z_CMB))**2 + 0.5 * 10**2 * (tanh(z-self.z_CMB/self.z_CMB) + 1)
 
 
     def T_S (self, z):
