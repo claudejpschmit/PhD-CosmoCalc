@@ -2,7 +2,7 @@
 # This file handles plotting for the Cosmology Calculator class. #
 ##################################################################
 
-from CosmologyCalculatorClass import CosmoCalc
+from CosmologyPlotterClass import CosmoPlot
 import argparse
 
 ############## Parsing input ##############
@@ -31,14 +31,14 @@ z = args.z
 
 ################# Output ################## 
 
-calc = CosmoCalc(args.H_0, args.O_M, args.O_V, args.T_CMB)
-#calc.plot_distances()
-#calc.plot_densities_rho(5000, 100)
-#calc.plot_densities_Omega(1000, 100)
-#calc.plot_H(1000, 100)
-#calc.plot_x_HI(50, 100)
-#calc.plot_kappa_HH(1, 1000, 1000)
-#calc.plot_kappa_Hp(1, 20000, 1000)
-#calc.plot_kappa_He(1, 20000, 1000)
-calc.plot_T_b(5, 200, 1000)
-calc.plot_T_k(5, 200, 1000)
+plotter = CosmoPlot(args.H_0, args.O_M, args.O_V, args.T_CMB)
+#plotter.plot_distances()
+#plotter.plot_densities_rho(5000, 100)
+#plotter.plot_densities_Omega(1000, 100)
+#plotter.plot_H(1000, 100)
+#plotter.plot_x_HI(50, 100)
+#plotter.plot_kappa_HH(1, 1000, 1000)
+#plotter.plot_kappa_Hp(1, 20000, 1000)
+#plotter.plot_kappa_He(1, 20000, 1000)
+#plotter.plot_T_b(5, 200, 1000)
+plotter.plot_T_k(5, 1000, 1000)
