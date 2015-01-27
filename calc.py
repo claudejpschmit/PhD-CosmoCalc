@@ -59,7 +59,4 @@ print "The luminosity distance D_L is %s MPc." % \
 print "The number of baryons in the Universe is %s" % \
         calc.num_baryons()
 
-print "---------------\n"
-print calc.Omega_M(1)
 
-print calc.kappa_HH(599)

@@ -227,3 +227,4 @@ class CosmoPlot(CosmoCalc):
         
         plt.savefig('T_k.png')
         plt.show()
+   

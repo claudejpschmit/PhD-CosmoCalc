@@ -12,6 +12,7 @@
 from math import *
 import scipy.integrate as integrate
 import scipy.interpolate as interpolate
+import scipy.special as special
 from sympy import Symbol
 import numpy as np
 
@@ -45,9 +46,6 @@ class CosmoCalc(object):
         # Charge of electron [Coulomb]
         self.e = 1.60217657 * 10**(-19)
 
-        # Ratio of spin degeneracy factors of the 
-        # 1S triplet and singlet state
-        self.ratio_g1g0 = 3
         # Planck Constant h [m^2 kg s^-1]
         self.h_planck = 6.62606957 * 10**(-34)
         # Gravitational constant [m^3 kg^-1 s^2]
@@ -66,89 +64,15 @@ class CosmoCalc(object):
         self.n_s = 0.95
         # Variance of matter fluctuations today smoothed on a scale of 8 h^-1 Mpc
         self.sigma_8 = 0.8
-        
-        # Collisional Coupling scattering rates [cm^3 s^-1]
-        # between H and H 
-        kappa_HH = {'1' : 1.38 * 1E-13,
-                 '2' : 1.43 * 1E-13, 
-                 '5' : 4.65 * 1E-13,
-                 '10' : 2.88 * 1E-12, 
-                 '20' : 1.78 * 1E-11,
-                 '50' : 6.86 * 1E-11, 
-                 '100' : 1.19 * 1E-10,
-                 '200' : 1.75 * 1E-10, 
-                 '500' : 2.66 * 1E-10,
-                 '1000' : 3.33 * 1E-10, 
-                 '2000' : 0,
-                 '3000' : 0, 
-                 '5000' : 0,
-                 '7000' : 0, 
-                 '10000' : 0,
-                 '15000' : 0, 
-                 '20000' : 0}  
-        x = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]
-        y = [kappa_HH[str(i)] for i in x]
-        self.kappa_HH = interpolate.interp1d(x, y)
-
-        # between H and p
-        kappa_Hp = {'1' : 0.4028,
-                         '2' : 0.4517, 
-                         '5' : 0.4301,
-                         '10' : 0.3699, 
-                         '20' : 0.3172,
-                         '50' : 0.3047, 
-                         '100' : 0.3379,
-                         '200' : 0.4043, 
-                         '500' : 0.5471,
-                         '1000' : 0.7051, 
-                         '2000' : 0.9167,
-                         '3000' : 1.070, 
-                         '5000' : 1.301,
-                         '7000' : 1.480, 
-                         '10000' : 1.695,
-                         '15000' : 1.975, 
-                         '20000' : 2.201 }   
-        x = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000,
-                3000, 5000, 7000, 10000, 15000, 20000]
-        y = [kappa_Hp[str(i)] for i in x]
-        self.kappa_Hp = interpolate.interp1d(x, y)
-
-
-        # between H and e
-        kappa_He = {'1' : 0.239,
-                         '2' : 0.337, 
-                         '5' : 0.503,
-                         '10' : 0.746, 
-                         '20' : 1.05,
-                         '50' : 1.63, 
-                         '100' : 2.26,
-                         '200' : 3.11, 
-                         '500' : 4.59,
-                         '1000' : 5.92, 
-                         '2000' : 7.15,
-                         '3000' : 7.71, 
-                         '5000' : 8.17,
-                         '7000' : 8.32, 
-                         '10000' : 8.37,
-                         '15000' : 8.29, 
-                         '20000' : 8.11 }  
-        y = [kappa_He[str(i)] for i in x]
-        self.kappa_He = interpolate.interp1d(x, y)
-
- 
-        # Einstein Coefficients
-        self.B_10 = self.A_10 * 0.21**3 / (2 * self.h_planck * self.c)
-        self.B_01 = self.ratio_g1g0 * self.B_10
-               
-        # Oscillator strength of the Lyalpha transition
-        self.f_alpha = 0.4162
-        # TODO: figure out S_alpha
-        self.S_alpha = 1.0
-
+           
         # Reionization regime
         self.delta_z = 4.0
         self.z_rei = 10.0
         self.z_CMB = 1100
+
+        #TODO: get a good bias factor
+        # bias factor
+        self.b_bias = 1
 #######################################################################
     
     # Helper function, denominator for various integrals
@@ -335,58 +259,29 @@ class CosmoCalc(object):
     def n_e(self, z):
         return self.n_p(z)
 
-    ####################### 21cm Stuff  ##########################
+    ####################################################################
+    ####### Two point Correlation of brightness tem. fluctuations ######
+    ####################################################################
 
-    # Oth order brighness temperature [mK]
-    def T_b_0th_Order(self, z):
-        norm = 27 * self.O_b * self.h**2 / 0.023 * sqrt(0.15 / (10 * self.O_M * self.h**2))
-        spinTemp = (self.T_S(z) - self.T(z))/self.T_S(z)
-        return norm * self.x_HI(z, self.delta_z, self.z_rei) * (1+z)**0.5 * spinTemp 
-
-    #### Spin temperature Calculation ####
-    #### This is according to Chapter 9 of:
-    #### ned.ipac.caltech.edu/level5/Sept06/Loeb/Loeb_contents.html
-
-    def C_10(self, T_k):
-        # TODO: this is a function of the gas temperature?!
-        #       and what is n_H ? we have n_h prop (1+z)^3
-        # ??? self.C_10 = 4.0 / 3.0 * self.kappa_H * n_H ? 
-        pass
+    ############### first we ignore redshift space distortions #########
+   
+    def corr_Tb_no_distortions(self, l, k1, k2):
+        #TODO: figure out integration limits kkk
+        integral = integrate.quad(lambda k: k**2 self.P_delta(k) *\
+                    self.M(l, k1, k) * self.M(l, k2, k), kkk, kkk)
+        return integral[0]
     
-    def C_01(self, T_k):
-        # TODO: ??? not defined
-        pass
-    # TODO: the color temperature of the surrounding bath of radio photons
-    def T_alpha(self, z):
-        return self.T_k(z)
-    # TODO: the gas kinetic temperature
-    def T_k(self, z):
-        return self.T_CMB * (1+z)**3/(1+self.z_CMB) + 0.5 * 10**2 * (tanh(z-self.z_CMB/self.z_CMB) + 1)
+    # M_l(k,k') = 2b/pi * int dr r^2 deltaT_b(r) j_l(kr) j_l(k'r)
+    def M(self, l, k1, k2):
+        #TODO: figure out integration limits rrr
+        integral = integrate.quad(lambda r: r**2 * self.delta_Tb_bar(r) *\
+                    special.sph_jn(l, k1*r)[0][l-1] *\
+                    special.sph_jn(l, k2*r)[0][l-1], rrr_lo, rrr_hi)
+        return 2*self.b_bias/pi*integral[0]
+
+    def delta_Tb_bar(self, r):
+        #TODO: find sensible constant
+        constant = 1
+        return constant
 
 
-    def T_S (self, z):
-        num = 1 + self.x_alpha(z) + self.x_c(z)
-        den = 1.0/self.T_gamma + self.x_alpha(z)/self.T_alpha(z) + self.x_c(z)/self.T_k(z)
-        return num / den
-
-    ########
-    # Total Collisional Coupling Coefficient
-    def x_c(self, z):
-        norm = self.T_star / (self.T_gamma * self.A_10)
-        res = self.n_H(z) * self.kappa_HH(self.T_k(z))\
-                + self.n_p(z) * self.kappa_Hp(self.T_k(z)) \
-                + self.n_e(z) * self.kappa_He(self.T_k(z))
-        return res * norm
-
-    # Wouthuysen-Field effect coupling
-    def x_alpha(self, z):
-        num = 16 * pi**2 * self.T_star * self.e**2 * self.f_alpha * \
-                self.S_alpha * self.J_alpha(z)
-        den = 27 * self.A_10 * self.T_gamma * self.m_e * self.c
-        return num / den
-
-    def J_alpha(self, z):
-        prefactor = 1.165 * 10**12 * (1+z)
-        return  0.5 * prefactor * (tanh(z-self.z_CMB/self.z_CMB) + 1)
-
-    
