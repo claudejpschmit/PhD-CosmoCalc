@@ -43,4 +43,10 @@ plotter = CosmoPlot(args.H_0, args.O_M, args.O_V, args.T_CMB)
 #plotter.plot_T_b(5, 200, 1000)
 #plotter.plot_T_k(5, 1000, 1000)
 #plotter.plot_T_CMB(0,1000, 1000)
-plotter.plot_age(200,1100, 2000)
+#plotter.plot_age(200,1100, 2000)
+
+#### this has errors
+#plotter.plot_corr_Tb_no_distortions(1, 1000, 0.01, 0.1, 6, 10, 1000)
+
+#### wrong because amplitude isn't right yet.
+plotter.plot_P(0.001,10, 10000)

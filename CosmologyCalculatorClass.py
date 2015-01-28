@@ -73,6 +73,8 @@ class CosmoCalc(object):
         #TODO: get a good bias factor
         # bias factor
         self.b_bias = 1
+        # k_eq scalles at horizon crossing [Mpc^-1]
+        self.k_eq = 0.073 * self.O_M * self.h**2
 #######################################################################
     
     # Helper function, denominator for various integrals
@@ -265,23 +267,68 @@ class CosmoCalc(object):
 
     ############### first we ignore redshift space distortions #########
    
-    def corr_Tb_no_distortions(self, l, k1, k2):
+    # Calculates the Tb correlation without redshift space distortions 
+    # between redshifts z1 & z2.
+    # use eg. z1 = 6 & z2 = 10 
+    def corr_Tb_no_distortions(self, l, k1, k2, z_low, z_high):
         #TODO: figure out integration limits kkk
-        integral = integrate.quad(lambda k: k**2 self.P_delta(k) *\
-                    self.M(l, k1, k) * self.M(l, k2, k), kkk, kkk)
+        integral = integrate.quad(lambda k: k**2 * self.P_delta(k) *\
+                    self.M(l, k1, k, z_low, z_high) *\
+                    self.M(l, k2, k, z_low, z_high), 0.001, 10)
         return integral[0]
     
-    # M_l(k,k') = 2b/pi * int dr r^2 deltaT_b(r) j_l(kr) j_l(k'r)
-    def M(self, l, k1, k2):
-        #TODO: figure out integration limits rrr
+    # M_l(k,k') = 2b/pi * int dr r^2 deltaT_b(r) j_l(kr) j_l(k'r) []
+    def M(self, l, k1, k2, z_low, z_high):
+        r_low = self.comoving_radial_dist(z_low)
+        r_high = self.comoving_radial_dist(z_high)
+
         integral = integrate.quad(lambda r: r**2 * self.delta_Tb_bar(r) *\
                     special.sph_jn(l, k1*r)[0][l-1] *\
-                    special.sph_jn(l, k2*r)[0][l-1], rrr_lo, rrr_hi)
+                    special.sph_jn(l, k2*r)[0][l-1] *\
+                    self.P_growth(r), r_low, r_high)
         return 2*self.b_bias/pi*integral[0]
 
+    # Mean Brightness Temperature fluctuations at distance r (comoving) [K]
     def delta_Tb_bar(self, r):
         #TODO: find sensible constant
         constant = 1
         return constant
 
+    # we seperate the power spectrum P(k,a) into a growing mode and P(k)
+    # P(k,a) = P_delta(k) * P_growth(a)
+    def P_growth(self, r):
+        #convert r to a
+        # here we use an approximation for the universe to be an Einstein de Sitter
+        # universe. This makes inverting r(z) easier and analytically doable. 
+        # In general, a numerical inversion is necessary!
+        # The factor of 1000 is to balance units.
+        z = (2*self.c / (2*self.c - 1000 * self.H_0 * r)) - 1
 
+        res = self.D1(z) / self.D1(0)
+        return res**2
+
+    def D1(self, z):
+        # need to relate a to z
+        # have done this
+        prefactor = 5 * self.O_M / 2 * self.E(z) 
+        # x = a' 
+        integral = integrate.quad(lambda x: (1+x) / self.E(x)**3, z, np.inf)
+        
+        return prefactor * integral[0]
+        
+    # This is the part of the power spectrum that only depends on the scale k
+    # Units: []
+    def P_delta(self, k):
+        amplitude = 1
+        x = k / self.k_eq
+        transfer_function = self.transfer(x)**2
+
+        P = amplitude * transfer_function 
+        return P 
+
+    # BBKS transfer function, Dodelson (7.70)
+    def transfer(self, x):
+        res = np.log(1 + 0.171 * x) / (0.171 * x)
+        bracket = 1+ 0.284 * x + (1.18 * x)**2 + (0.399 * x)**3 + (0.490 * x)**4
+        res = res * bracket**(-0.25)
+        return res
