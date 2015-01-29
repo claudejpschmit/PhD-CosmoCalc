@@ -15,6 +15,7 @@ import scipy.interpolate as interpolate
 import scipy.special as special
 from sympy import Symbol
 import numpy as np
+import scipy.optimize as op
 
 class CosmoCalc(object):
     # Initializer fixes constant parameters
@@ -278,15 +279,25 @@ class CosmoCalc(object):
         return integral[0]
     
     # M_l(k,k') = 2b/pi * int dr r^2 deltaT_b(r) j_l(kr) j_l(k'r) []
+    #def M(self, l, k1, k2, z_low, z_high):
+    #    r_low = self.comoving_radial_dist(z_low)
+    #    r_high = self.comoving_radial_dist(z_high)
+    #    print "r_low is %s" % r_low
+    #    print "r_high is %s" % r_high
+#
+#        integral = integrate.quad(lambda : r**2 * self.delta_Tb_bar(r) *\
+#                    special.sph_jn(l, k1*r)[0][l-1] *\
+#                    special.sph_jn(l, k2*r)[0][l-1] *\
+#                    self.P_growth(r), r_low, r_high)
+#        return 2*self.b_bias/pi*integral[0]
     def M(self, l, k1, k2, z_low, z_high):
-        r_low = self.comoving_radial_dist(z_low)
-        r_high = self.comoving_radial_dist(z_high)
-
-        integral = integrate.quad(lambda r: r**2 * self.delta_Tb_bar(r) *\
-                    special.sph_jn(l, k1*r)[0][l-1] *\
-                    special.sph_jn(l, k2*r)[0][l-1] *\
-                    self.P_growth(r), r_low, r_high)
-        return 2*self.b_bias/pi*integral[0]
+       
+        integral = integrate.quad(lambda z: self.D_C(z)**2 * self.delta_Tb_bar(self.D_C(z)) *\
+                    special.sph_jn(l, k1*self.D_C(z))[0][l-1] *\
+                    special.sph_jn(l, k2*self.D_C(z))[0][l-1] *\
+                    self.P_growth(z) / self.E(z), z_low, z_high)
+        # factor of 1000 to cancel velocity dependence in c/H_0
+        return 2*self.b_bias*self.c/(pi*self.H_0*1000)*integral[0]
 
     # Mean Brightness Temperature fluctuations at distance r (comoving) [K]
     def delta_Tb_bar(self, r):
@@ -294,16 +305,10 @@ class CosmoCalc(object):
         constant = 1
         return constant
 
+
     # we seperate the power spectrum P(k,a) into a growing mode and P(k)
     # P(k,a) = P_delta(k) * P_growth(a)
-    def P_growth(self, r):
-        #convert r to a
-        # here we use an approximation for the universe to be an Einstein de Sitter
-        # universe. This makes inverting r(z) easier and analytically doable. 
-        # In general, a numerical inversion is necessary!
-        # The factor of 1000 is to balance units.
-        z = (2*self.c / (2*self.c - 1000 * self.H_0 * r)) - 1
-
+    def P_growth(self, z):
         res = self.D1(z) / self.D1(0)
         return res**2
 
@@ -319,8 +324,11 @@ class CosmoCalc(object):
     # This is the part of the power spectrum that only depends on the scale k
     # Units: []
     def P_delta(self, k):
-        amplitude = 1
-        x = k / self.k_eq
+        delta_H = 4.6 * 10**(-5)
+        amplitude = 2*pi**2 * delta_H**2 * k / 100**4
+        #x = k / self.k_eq
+        keq = 0.073 * self.O_M * self.h 
+        x = k / keq
         transfer_function = self.transfer(x)**2
 
         P = amplitude * transfer_function 

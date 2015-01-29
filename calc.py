@@ -59,4 +59,9 @@ print "The luminosity distance D_L is %s MPc." % \
 print "The number of baryons in the Universe is %s" % \
         calc.num_baryons()
 
+print "#################################"
+print "P_growth is %s" % calc.P_growth(100000) 
+print "D1(0) is %s" % calc.D1(1000)
+#print "M is %s " % calc.M(5, 0.1,0.1,6, 10)
+#print "correlation is %s" % calc.corr_Tb_no_distortions(5, 0.01, 0.1, 6, 10)
 
