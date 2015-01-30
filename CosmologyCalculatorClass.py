@@ -271,11 +271,13 @@ class CosmoCalc(object):
     # Calculates the Tb correlation without redshift space distortions 
     # between redshifts z1 & z2.
     # use eg. z1 = 6 & z2 = 10 
+    # This has units [MPc^6 K^2]
     def corr_Tb_no_distortions(self, l, k1, k2, z_low, z_high):
         #TODO: figure out integration limits kkk
-        integral = integrate.quad(lambda k: k**2 * self.P_delta(k) *\
+        integral = integrate.quad(lambda k: k**2 *\
+                    self.P_delta(k, units_k = 'mpc-1', units_P = 'mpc3') *\
                     self.M(l, k1, k, z_low, z_high) *\
-                    self.M(l, k2, k, z_low, z_high), 0.001, 10)
+                    self.M(l, k2, k, z_low, z_high), 0.1, 1)
         return integral[0]
     
     # M_l(k,k') = 2b/pi * int dr r^2 deltaT_b(r) j_l(kr) j_l(k'r) []
@@ -290,6 +292,8 @@ class CosmoCalc(object):
 #                    special.sph_jn(l, k2*r)[0][l-1] *\
 #                    self.P_growth(r), r_low, r_high)
 #        return 2*self.b_bias/pi*integral[0]
+
+    # M_l has units [MPc^3 K] (Kelvin or mK, depending on the units of delta_Tb_bar)
     def M(self, l, k1, k2, z_low, z_high):
        
         integral = integrate.quad(lambda z: self.D_C(z)**2 * self.delta_Tb_bar(self.D_C(z)) *\

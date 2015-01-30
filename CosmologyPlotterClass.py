@@ -109,6 +109,21 @@ class CosmoPlot(CosmoCalc):
         
         plt.savefig('correlation.png')
         plt.show()
+    
+    
+    def plot_Ml(self, l, k_fixed, k2_low, k2_high, z_low, z_high, step):
+        stepsize = (k2_high - k2_low) / float(step)
+        x = [k2_low + float(i) * stepsize for i in range(0, step)]
+        y1 = [self.M(l, k_fixed, k2, z_low, z_high) for k2 in x]
+        plot1 = plt.loglog(x, y1, basex = 10, basey = 10, label = r'$M_l(k, k\')$')
+        plt.legend(loc = 'upper left')
+        plt.title(r'$M_l(k, k\')$ vs $k\'$ for $l = 5$' )
+        plt.xlabel(r'$k\'$')
+        plt.ylabel(r'$M_l(k, k\')$')
+        plt.grid(True)
+        
+        plt.savefig('M_l.png')
+        plt.show()
 
     def plot_P(self, kmin, kmax, step, units_k = 'default', units_P = 'default'):
         stepsize = (kmax - kmin) / float(step)
