@@ -4,6 +4,7 @@
 
 from CosmologyCalculatorClass import CosmoCalc
 import matplotlib.pyplot as plt
+import numpy as np
 
 class CosmoPlot(CosmoCalc):
     ############################ Plotting ############################
@@ -109,16 +110,36 @@ class CosmoPlot(CosmoCalc):
         plt.savefig('correlation.png')
         plt.show()
 
-    def plot_P(self, kmin, kmax, step):
+    def plot_P(self, kmin, kmax, step, units_k = 'default', units_P = 'default'):
         stepsize = (kmax - kmin) / float(step)
+        
         x = [kmin + float(i) * stepsize for i in range(0, step)]
-        y1 = [self.P_delta(k) for k in x]
-        plot1 = plt.loglog(x, y1, basex = 10, basey = 10, label = r'P(k) vs k')
-        plt.legend(loc = 'upper left')
-        plt.title(r'test' )
-        plt.xlabel(r'$k$')
-        plt.ylabel(r'$P(k)$')
+        y1 = [self.P_delta(k, units_k, units_P) for k in x]
+        plot1 = plt.loglog(x, y1, basex = 10, basey = 10, label = r'P(k)')
+        
+        if units_k == 'default':
+            plt.xlabel(r'$k$ $(h \, Mpc^{-1})$')
+        elif units_k == 'mpc-1' or units_k == 'Mpc-1':
+            plt.xlabel(r'$k$ $(Mpc^{-1})$')
+        
+        if units_P == 'default':
+            plt.ylabel(r'$P(k)$ $(h^{-3} Mpc^3)$')
+        elif units_P == 'mpc3' or units_P == 'Mpc3':
+            plt.ylabel(r'$P(k)$ $(Mpc^3)$')
+
+
+        if units_k == 'default' and units_P == 'default':
+            xcomp, ycomp = np.loadtxt('compare.dat', unpack = True)
+            plot2 = plt.loglog(xcomp, ycomp, basex = 10, basey = 10, label = r'P(k) from iCosmo')
+            xcomp2, ycomp2 = np.loadtxt('test_matterpower.dat', unpack = True)
+            plot3 = plt.loglog(xcomp2, ycomp2, basex = 10, basey = 10, label = r'P(k) from CAMB')
+
+        plt.legend(loc = 'upper right')
+        plt.title(r'Matter Power Spectrum' )
         plt.grid(True)
+        plt.xlim([10**(-3), 10])
+        plt.ylim([1, 100000])
+
         
         plt.savefig('powerspectrum.png')
         plt.show()

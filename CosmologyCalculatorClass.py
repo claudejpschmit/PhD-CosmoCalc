@@ -322,16 +322,39 @@ class CosmoCalc(object):
         return prefactor * integral[0]
         
     # This is the part of the power spectrum that only depends on the scale k
-    # Units: []
-    def P_delta(self, k):
-        delta_H = 4.6 * 10**(-5)
-        amplitude = 2*pi**2 * delta_H**2 * k / 100**4
-        #x = k / self.k_eq
-        keq = 0.073 * self.O_M * self.h 
-        x = k / keq
-        transfer_function = self.transfer(x)**2
+    # Units: 
+    # output:units_P = default:        P in [h^-3 * MPc^3]
+    #        units_P = mpc3 or Mpc3:   P in [MPc^3]
+    # input: units_k = default:        k in [h Mpc^-1]
+    #        units_k = mpc-1 or Mpc-1: k in [MPc^-1]
+    
+    def P_delta(self, k, units_k = 'default', units_P = 'default'):
+        
+        if units_P == 'default':
 
-        P = amplitude * transfer_function 
+            if units_k == 'default':
+                keq = 0.073 * self.O_M * self.h 
+                k_factor = k
+            elif units_k == 'Mpc-1' or units_k == 'mpc-1':
+                keq = 0.073 * self.O_M * self.h**2
+                k_factor = k / self.h
+        elif units_P == 'Mpc3' or units_P == 'mpc3':
+            if units_k == 'default':
+                keq = 0.073 * self.O_M * self.h 
+                k_factor = k / self.h**3
+            elif units_k == 'Mpc-1' or units_k == 'mpc-1':
+                keq = 0.073 * self.O_M * self.h**2
+                k_factor = k / self.h**4
+        
+        if self.Omega_M == 1:
+            delta_H = 1.9 * 10**(-5)
+        else:
+            delta_H = 4.5 * 10**(-5)
+        A = 2*pi**2 * (self.c/1000)**4 * delta_H**2 / 100**4
+        x = k / keq
+        transfer_function_sq = self.transfer(x)**2
+        P = A * k_factor * transfer_function_sq
+
         return P 
 
     # BBKS transfer function, Dodelson (7.70)

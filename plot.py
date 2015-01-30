@@ -49,4 +49,4 @@ plotter = CosmoPlot(args.H_0, args.O_M, args.O_V, args.T_CMB)
 #plotter.plot_corr_Tb_no_distortions(1, 1000, 0.01, 0.1, 6, 10, 1000)
 
 #### wrong because amplitude isn't right yet.
-plotter.plot_P(0.001,10, 10000)
+plotter.plot_P(0.001,10, 10000, units_k = 'default', units_P = 'default')
