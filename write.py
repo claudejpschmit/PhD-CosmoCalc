@@ -8,7 +8,10 @@ import argparse
 ############## Parsing input ##############
 
 descr = 'This program uses the Cosmology Calculator Class \
-         to plot various cosmological results including ...'
+         to write the function M_l to a file. This program \
+         gives the values of M_l(k1,k2) for a specified l & k1 \
+         over a range of k2. The following parameters should \
+         be defined: l, k_fixed, k_low, k_high, steps'
 
 parser = argparse.ArgumentParser(description=descr)
 parser.add_argument('--version', action='version', 
@@ -24,13 +27,26 @@ parser.add_argument('--z', metavar = 'z',
         type = float, default = 3, help = 'redshift')
 parser.add_argument('--T_CMB', metavar = 'T_CMB', 
         type = float, default = 2.75, help = 'CMB temperature')
+parser.add_argument('--l', metavar = 'l', 
+        type = float, default = 5, help = 'Spherical Bessel index')
+parser.add_argument('--k_fixed', metavar = 'k_fixed', 
+        type = float, default = 0.1, help = 'k1')
+parser.add_argument('--k2_low', metavar = 'k2_low', 
+        type = float, default = 0.01, help = 'lower bound for k2')
+parser.add_argument('--k2_high', metavar = 'k2_high', 
+        type = float, default = 0.5, help = 'top bound for k2')
+parser.add_argument('--steps', metavar = 'steps', 
+        type = float, default = 10000, help = 'Number of steps between k_low and k_high')
+parser.add_argument('--z_low', metavar = 'z_low', 
+        type = float, default = 7, help = 'lower bound for z integration')
+parser.add_argument('--z_high', metavar = 'z_high', 
+        type = float, default = 9, help = 'top bound for z integration')
 
 
 args = parser.parse_args()
-z = args.z
 
 ################# Output ################## 
 
 writer = CosmoWrite(args.H_0, args.O_M, args.O_V, args.T_CMB)
 
-writer.calculate_Ml(l=5, k_fixed=0.1, k2_low=0.2, k2_high=1, z_low=7, z_high=9, step=10)
+writer.calculate_Ml(args.l, args.k_fixed, args.k2_low, args.k2_high, args.z_low, args.z_high, args.steps)

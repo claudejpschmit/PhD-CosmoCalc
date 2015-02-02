@@ -12,10 +12,10 @@
 from math import *
 import scipy.integrate as integrate
 import scipy.interpolate as interpolate
-import scipy.special as special
 from sympy import Symbol
 import numpy as np
 import scipy.optimize as op
+import mpmath as mp
 
 class CosmoCalc(object):
     # Initializer fixes constant parameters
@@ -77,12 +77,15 @@ class CosmoCalc(object):
         # k_eq scalles at horizon crossing [Mpc^-1]
         self.k_eq = 0.073 * self.O_M * self.h**2
 #######################################################################
-    
+    # Helper function to compute spherical bessel functions
+    def sphbess(self, n, x):
+        return sqrt(pi/(2*x))*mp.besselj(n+0.5, x)
+
     # Helper function, denominator for various integrals
     # E(z) = H(z)/H_0 
     def E(self, z):
-        return sqrt(self.O_V + self.O_R * (1+z)**4 +
-                self.O_M * (1+z)**3 + (1-self.O_tot) * (1+z)**2)
+        return (self.O_V + self.O_R * (1+z)**4 +
+                self.O_M * (1+z)**3 + (1-self.O_tot) * (1+z)**2)**0.5
 
     # Helper function, Z = int (dz/E, 0, z)
     def Z(self, z):
@@ -280,25 +283,11 @@ class CosmoCalc(object):
                     self.M(l, k2, k, z_low, z_high), 0.1, 1)
         return integral[0]
     
-    # M_l(k,k') = 2b/pi * int dr r^2 deltaT_b(r) j_l(kr) j_l(k'r) []
-    #def M(self, l, k1, k2, z_low, z_high):
-    #    r_low = self.comoving_radial_dist(z_low)
-    #    r_high = self.comoving_radial_dist(z_high)
-    #    print "r_low is %s" % r_low
-    #    print "r_high is %s" % r_high
-#
-#        integral = integrate.quad(lambda : r**2 * self.delta_Tb_bar(r) *\
-#                    special.sph_jn(l, k1*r)[0][l-1] *\
-#                    special.sph_jn(l, k2*r)[0][l-1] *\
-#                    self.P_growth(r), r_low, r_high)
-#        return 2*self.b_bias/pi*integral[0]
-
-    # M_l has units [MPc^3 K] (Kelvin or mK, depending on the units of delta_Tb_bar)
     def M(self, l, k1, k2, z_low, z_high):
        
         integral = integrate.quad(lambda z: self.D_C(z)**2 * self.delta_Tb_bar(self.D_C(z)) *\
-                    special.sph_jn(l, k1*self.D_C(z))[0][l-1] *\
-                    special.sph_jn(l, k2*self.D_C(z))[0][l-1] *\
+                    self.sphbess(l, k1*self.D_C(z)) *\
+                    self.sphbess(l, k2*self.D_C(z)) *\
                     self.P_growth(z) / self.E(z), z_low, z_high)
         # factor of 1000 to cancel velocity dependence in c/H_0
         return 2*self.b_bias*self.c/(pi*self.H_0*1000)*integral[0]
@@ -321,8 +310,7 @@ class CosmoCalc(object):
         # have done this
         prefactor = 5 * self.O_M / 2 * self.E(z) 
         # x = a' 
-        integral = integrate.quad(lambda x: (1+x) / self.E(x)**3, z, np.inf)
-        
+        integral = integrate.quad(lambda x: (1+x) / self.E(x)**3, z, np.inf)        
         return prefactor * integral[0]
         
     # This is the part of the power spectrum that only depends on the scale k

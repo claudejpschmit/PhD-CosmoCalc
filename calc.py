@@ -39,7 +39,7 @@ def convert_to_gy(age):
     return age * 10**10 * 3.08568 / (365.25 * 24 * 3600)
 
 calc = CosmoCalc(args.H_0, args.O_M, args.O_V, args.T_CMB)
-
+'''
 print "\nFor a Universe with H0 = %s, Omega_M = %s, Omega_V = %s, z = %s and T_CMB = %s K:\n" % (calc.H_0, calc.O_M, calc.O_V, z, calc.T_CMB)
 print "It is now %s Gyr since the Big Bang." % \
         convert_to_gy(calc.age_of_universe(0))
@@ -62,6 +62,13 @@ print "The number of baryons in the Universe is %s" % \
 print "#################################"
 print "P_growth is %s" % calc.P_growth(100000) 
 print "D1(0) is %s" % calc.D1(1000)
-print "M is %s " % calc.M(5, 0.1,0.3,7,9)
+'''
 #print "correlation is %s" % calc.corr_Tb_no_distortions(5, 0.01, 0.1, 7, 9)
 
+
+print "M is %s " % calc.M(5, 0.1,0.355,7,9)
+print "M is %s " % calc.M(5, 0.1,0.356,7,9)
+print "M is %s " % calc.M(5, 0.1,0.357,7,9)
+print "M is %s " % calc.M(5, 0.1,0.358,7,9)
+print "M is %s " % calc.M(5, 0.1,0.359,7,9)
+print "M is %s " % calc.M(5, 0.1,0.7,7,9)
