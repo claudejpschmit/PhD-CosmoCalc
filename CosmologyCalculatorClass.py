@@ -16,6 +16,8 @@ from sympy import Symbol
 import numpy as np
 import scipy.optimize as op
 import mpmath as mp
+import scipy.special as special
+
 
 class CosmoCalc(object):
     # Initializer fixes constant parameters
@@ -79,19 +81,24 @@ class CosmoCalc(object):
 #######################################################################
     # Helper function to compute spherical bessel functions
     def sphbess(self, n, x):
-        return sqrt(pi/(2*x))*mp.besselj(n+0.5, x)
+        return sqrt(pi/(2*x)) * mp.besselj(n+0.5, x)
+    # Helper function to compute spherical bessel functions fast
+    def fsphbess(self, n, x):
+        return sqrt(pi/(2*x)) * mp.fp.besselj(n+0.5, x)
 
     # Helper function, denominator for various integrals
     # E(z) = H(z)/H_0 
     def E(self, z):
-        return (self.O_V + self.O_R * (1+z)**4 +
-                self.O_M * (1+z)**3 + (1-self.O_tot) * (1+z)**2)**0.5
+        return sqrt(self.O_V + self.O_R * (1+z)**4 +
+                self.O_M * (1+z)**3 + (1-self.O_tot) * (1+z)**2)
 
     # Helper function, Z = int (dz/E, 0, z)
     def Z(self, z):
         integral = integrate.quad(lambda x: 1.0/self.E(x), 0, z)
         return integral[0]
-    
+    def Z_opt(self, z):
+        integral = mp.fp.quad(lambda x: 1.0/self.E(x), [0, z])
+        return integral
     # Curvature term in the metric:
     #   sinh x, x or sin x 
     def S_k(self, x):
@@ -117,8 +124,12 @@ class CosmoCalc(object):
     #   D_C = D_H int(dz / E(z),0,z) = D_H * Z = cZ/H_0
     def comoving_radial_dist(self, z):
         return self.hubble_dist() * self.Z(z)
+    def comoving_radial_dist_opt(self, z):
+        return self.hubble_dist() * self.Z_opt(z)
     def D_C(self, z):
         return self.comoving_radial_dist(z)
+    def D_C_opt(self, z):
+        return self.comoving_radial_dist_opt(z)
     def D_now(self, z):
         return self.comoving_radial_dist(z)
 
@@ -151,9 +162,9 @@ class CosmoCalc(object):
                     ((1+z) * root)
         elif (self.O_V + self.O_M <= 1.0):
             return 1.0 / (1.0 + z2) * \
-                    ( self.D_M(z2) * sqrt(1 + (1 - O_k) *\
+                    ( self.D_M(z2) * (1 + sqrt(1 - O_k) *\
                     self.D_M(z)**2 / self.D_H**2) - \
-                    self.D_M(z) * sqrt(1 + (1 - O_k) *\
+                    self.D_M(z) * (1 + sqrt(1 - O_k) *\
                     self.D_M(z2)**2 / self.D_H**2) )
         else:
             print "Error: D_A12 formula invalid for O_tot > 1.0"
@@ -177,7 +188,12 @@ class CosmoCalc(object):
         return vol*integral[0]
     def V_C(self, z):
         return self.comoving_volume(z)
-    
+    def comoving_volume_opt(self, z):
+        vol = 4*pi*self.D_H
+        integral = mp.fp.quad(lambda x: (1+x)**2 * \
+                self.D_A(x)**2/self.E(x), [0, z])
+        return vol*integral
+
     # Age of the Universe at redshift z [s * Mpc/km]:
     #   t(z) = t_H int(dz/((1+z) E(z)), z, inf)
     #def age_of_universe(self, z):
@@ -187,12 +203,16 @@ class CosmoCalc(object):
         age = integrate.quad(lambda x: 1.0/((1+x)*self.E(x)) \
                 , z, np.inf)
         return age[0] * self.t_H
-
+    def age_of_universe_opt(self, z):
+        age = mp.fp.quad(lambda x: 1.0/((1+x)*self.E(x)) \
+                , [z, mp.inf])
+        return age * self.t_H
     # Light travel time [s * Mpc/km]:
     #   ltt = t(0) - t(z)
     def light_travel_time(self, z):
         return self.age_of_universe(0) - self.age_of_universe(z)
-
+    def light_travel_time_opt(self, z):
+        return self.age_of_universe_opt(0) - self.age_of_universe_opt(z)
     # Distance based on light travel time [Mpc]
     # D_ltt = c * (t(0) - t(z))
     def D_ltt(self, z):
@@ -275,12 +295,12 @@ class CosmoCalc(object):
     # between redshifts z1 & z2.
     # use eg. z1 = 6 & z2 = 10 
     # This has units [MPc^6 K^2]
-    def corr_Tb_no_distortions(self, l, k1, k2, z_low, z_high):
+    def corr_Tb_term1(self, l, k1, k2, z_low, z_high, k_low, k_high):
         #TODO: figure out integration limits kkk
         integral = integrate.quad(lambda k: k**2 *\
                     self.P_delta(k, units_k = 'mpc-1', units_P = 'mpc3') *\
                     self.M(l, k1, k, z_low, z_high) *\
-                    self.M(l, k2, k, z_low, z_high), 0.1, 1)
+                    self.M(l, k2, k, z_low, z_high), k_low, k_high)
         return integral[0]
     
     def M(self, l, k1, k2, z_low, z_high):
@@ -291,6 +311,47 @@ class CosmoCalc(object):
                     self.P_growth(z) / self.E(z), z_low, z_high)
         # factor of 1000 to cancel velocity dependence in c/H_0
         return 2*self.b_bias*self.c/(pi*self.H_0*1000)*integral[0]
+    def M_opt(self, l, k1, k2, z_low, z_high):
+       
+        integral = integrate.quad(lambda z: self.D_C(z)**2 * self.delta_Tb_bar(self.D_C(z)) *\
+                    self.fsphbess(l, k1*self.D_C(z)) *\
+                    self.fsphbess(l, k2*self.D_C(z)) *\
+                    self.P_growth(z) / self.E(z), z_low, z_high)
+        # factor of 1000 to cancel velocity dependence in c/H_0
+        return 2*self.b_bias*self.c/(pi*self.H_0*1000)*integral[0]
+
+    def M_opt2(self, l, k1, k2, z_low, z_high):
+       
+        integral = mp.quad(lambda z: self.D_C(z)**2 * self.delta_Tb_bar(self.D_C(z)) *\
+                    self.fsphbess(l, k1*self.D_C(z)) *\
+                    self.fsphbess(l, k2*self.D_C(z)) *\
+                    self.P_growth(z) / self.E(z), [z_low, z_high])
+        # factor of 1000 to cancel velocity dependence in c/H_0
+        return 2*self.b_bias*self.c/(pi*self.H_0*1000)*integral
+
+#########################################################################
+# this new M function does the integration directly
+
+    def M_new(self, l, k1, k2, z_low, z_high):
+        def integrand(z):
+            r = self.D_C(z)
+            integral = integrate.quad(lambda x: (1+x) / self.E(x)**3, z, np.inf)
+
+            return r**2 * self.delta_Tb_bar(r) * self.fsphbess(l,k1*r) * self.fsphbess(l,k2*r)
+
+
+
+
+
+
+
+        B = integrate.quad(lambda x: (1+x) / self.E(x)**3, 0, np.inf) 
+        prefactor = 2*self.b_bias*self.c/(B[0]*pi*self.H_0*1000)
+        res = 0   
+        return res
+
+
+##########################################################################
 
     # Mean Brightness Temperature fluctuations at distance r (comoving) [K]
     def delta_Tb_bar(self, r):
@@ -312,7 +373,14 @@ class CosmoCalc(object):
         # x = a' 
         integral = integrate.quad(lambda x: (1+x) / self.E(x)**3, z, np.inf)        
         return prefactor * integral[0]
-        
+    def D1_opt(self, z):
+        # need to relate a to z
+        # have done this
+        prefactor = 5 * self.O_M / 2 * self.E(z) 
+        # x = a' 
+        integral = mp.quad(lambda x: (1+x) / self.E(x)**3, [z, mp.inf])        
+        return prefactor * integral
+
     # This is the part of the power spectrum that only depends on the scale k
     # Units: 
     # output:units_P = default:        P in [h^-3 * MPc^3]
@@ -355,3 +423,42 @@ class CosmoCalc(object):
         bracket = 1+ 0.284 * x + (1.18 * x)**2 + (0.399 * x)**3 + (0.490 * x)**4
         res = res * bracket**(-0.25)
         return res
+    
+    # Calculates the second  and third 
+    # term in the full Tb correlation 
+    # between redshifts z1 & z2.
+    # use eg. z1 = 6 & z2 = 10 
+    # This has units []
+    def corr_Tb_term23(self, l, k1, k2, z_low, z_high, k_low, k_high):
+        #TODO: figure out integration limits kkk
+        integral = integrate.quad(lambda k: k**(-2) *\
+                    self.P_delta(k, units_k = 'mpc-1', units_P = 'mpc3') *\
+                    self.M(l, k1, k, z_low, z_high) *\
+                    self.N(l, k2, k, z_low, z_high, k_low, k_high), k_low, k_high)
+        beta = 1
+
+        return beta*integral[0]
+    
+    # Calculates the fourth 
+    # term in the full Tb correlation 
+    # between redshifts z1 & z2.
+    # use eg. z1 = 6 & z2 = 10 
+    # This has units []
+    def corr_Tb_term4(self, l, k1, k2, z_low, z_high, k_low, k_high):
+        #TODO: figure out integration limits kkk
+        integral = integrate.quad(lambda k: k**(-6) *\
+                    self.P_delta(k, units_k = 'mpc-1', units_P = 'mpc3') *\
+                    self.N(l, k1, k, z_low, z_high, k_low, k_high) *\
+                    self.N(l, k2, k, z_low, z_high, k_low, k_high), k_low, k_high)
+        beta = 1
+        return beta**2 * integral[0]
+
+    def N(self, l, k1,k2, z_low, z_high, k_low, k_high):
+        integral = integrate.quad(lambda k: k**2 * self.M(l,k1,k,z_low,z_high) * self.Phi(l,k2, k, z_low, z_high),k_low, k_high)
+        return integral[0]
+    def Phi(self,l,k1,k2,z_low,z_high):
+        const = 2*self.bias/pi
+        #TODO: get f(z) & const right
+        #integral = integrate.quad(lambda z: f(z),z_low,z_high)
+
+        return const #* integral[0]

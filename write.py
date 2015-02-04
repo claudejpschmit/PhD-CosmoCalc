@@ -37,6 +37,8 @@ parser.add_argument('--k2_high', metavar = 'k2_high',
         type = float, default = 0.5, help = 'top bound for k2')
 parser.add_argument('--steps', metavar = 'steps', 
         type = float, default = 10000, help = 'Number of steps between k_low and k_high')
+parser.add_argument('--stepsize', metavar = 'stepsize', 
+        type = float, default = 0, help = 'Stepsize. Non-zero value leads to averwriting steps variable')
 parser.add_argument('--z_low', metavar = 'z_low', 
         type = float, default = 7, help = 'lower bound for z integration')
 parser.add_argument('--z_high', metavar = 'z_high', 
@@ -49,4 +51,5 @@ args = parser.parse_args()
 
 writer = CosmoWrite(args.H_0, args.O_M, args.O_V, args.T_CMB)
 
-writer.calculate_Ml(args.l, args.k_fixed, args.k2_low, args.k2_high, args.z_low, args.z_high, args.steps)
+#writer.calculate_Ml(args.l, args.k_fixed, args.k2_low, args.k2_high, args.z_low, args.z_high, int(args.steps), args.stepsize)
+writer.calculate_Ml_opt(args.l, args.k_fixed, args.k2_low, args.k2_high, args.z_low, args.z_high, int(args.steps), args.stepsize)
