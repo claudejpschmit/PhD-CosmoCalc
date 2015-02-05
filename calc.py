@@ -65,44 +65,14 @@ if not args.p:
 
     
     print "#################################"
-    print "\nFor a Universe with H0 = %s, Omega_M = %s, Omega_V = %s, z = %s and T_CMB = %s K:\n" % (calc.H_0, calc.O_M, calc.O_V, z, calc.T_CMB)
-    print "It is now %s Gyr since the Big Bang." % \
-        convert_to_gy(calc.age_of_universe_opt(0))
-    print "The age at redshift z was %s Gyr." % \
-        convert_to_gy(calc.age_of_universe_opt(z))
-    print "The light travel time was %s Gyr." % \
-        convert_to_gy(calc.light_travel_time_opt(z))
-    print "The comoving radial distance is %s MPc." % \
-        calc.comoving_radial_dist_opt(z)
-    #vol = calc.comoving_volume(z) / 10**9
-    #print "The comoving volume within redshift z is %s Gpc^3." % \
-    #    vol
-    #print "The angular size distance D_A is %s MPc." % \
-    #    calc.angular_diam_dist(z)
-    #print "The luminosity distance D_L is %s MPc." % \
-    #    calc.luminosity_dist(z)
-    #print "The number of baryons in the Universe is %s" % \
-    #    calc.num_baryons()
-
     
-    print "#################################"
-
-
-    print calc.M(3, 0.1, 1.0, 7, 9)
-    print calc.M_opt(3, 0.1, 1.0, 7, 9)
-    print calc.M_opt2(3, 0.1, 1.0, 7, 9)
-    #print "P_growth is %s" % calc.P_growth(100000) 
-    #print "D1(0) is %s" % calc.D1(1000)
-
-    #print "correlation is %s" % calc.corr_Tb_no_distortions(5, 0.1, 0.2, 7, 9, 0.01, 0.5)
-
 else:
     #print calc.M(3, 0.1, 1.0, 7, 9)
     #profile.run('calc.M(3, 0.1, 1.0, 7, 9)')
     #print calc.M_opt(3, 0.1, 1.0, 7, 9)
-    #profile.run('calc.M_opt(3, 0.1, 1.0, 7, 9)')
-    print calc.M_opt2(3, 0.1, 1.0, 7, 9)
-    profile.run('calc.M_opt2(3, 0.1, 1.0, 7, 9)')
+    profile.run('calc.M_opt(3, 0.1, 1.0, 7, 9)')
+    #print calc.M_opt2(3, 0.1, 1.0, 7, 9)
+    profile.run('calc.M_new(3, 0.1, 1.0, 7, 9)')
 
 
     #profile.run('calc.M(5, 0.1, 0.2, 7, 9)')

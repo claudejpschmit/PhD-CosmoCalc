@@ -16,7 +16,6 @@ import scipy.integrate as integrate
 import numpy as np
 import mpmath as mp
 
-
 class CosmoCalc(CosmoBasis):
     
     # Hubble Time [s * Mpc/km]: 
@@ -34,12 +33,8 @@ class CosmoCalc(CosmoBasis):
     #   D_C = D_H int(dz / E(z),0,z) = D_H * Z = cZ/H_0
     def comoving_radial_dist(self, z):
         return self.hubble_dist() * self.Z(z)
-    def comoving_radial_dist_opt(self, z):
-        return self.hubble_dist() * self.Z_opt(z)
     def D_C(self, z):
         return self.comoving_radial_dist(z)
-    def D_C_opt(self, z):
-        return self.comoving_radial_dist_opt(z)
     def D_now(self, z):
         return self.comoving_radial_dist(z)
 
@@ -98,12 +93,7 @@ class CosmoCalc(CosmoBasis):
         return vol*integral[0]
     def V_C(self, z):
         return self.comoving_volume(z)
-    def comoving_volume_opt(self, z):
-        vol = 4*pi*self.D_H
-        integral = mp.fp.quad(lambda x: (1+x)**2 * \
-                self.D_A(x)**2/self.E(x), [0, z])
-        return vol*integral
-
+    
     # Age of the Universe at redshift z [s * Mpc/km]:
     #   t(z) = t_H int(dz/((1+z) E(z)), z, inf)
     #def age_of_universe(self, z):
@@ -113,16 +103,10 @@ class CosmoCalc(CosmoBasis):
         age = integrate.quad(lambda x: 1.0/((1+x)*self.E(x)) \
                 , z, np.inf)
         return age[0] * self.t_H
-    def age_of_universe_opt(self, z):
-        age = mp.fp.quad(lambda x: 1.0/((1+x)*self.E(x)) \
-                , [z, mp.inf])
-        return age * self.t_H
     # Light travel time [s * Mpc/km]:
     #   ltt = t(0) - t(z)
     def light_travel_time(self, z):
         return self.age_of_universe(0) - self.age_of_universe(z)
-    def light_travel_time_opt(self, z):
-        return self.age_of_universe_opt(0) - self.age_of_universe_opt(z)
     # Distance based on light travel time [Mpc]
     # D_ltt = c * (t(0) - t(z))
     def D_ltt(self, z):
@@ -213,51 +197,57 @@ class CosmoCalc(CosmoBasis):
                     self.M(l, k2, k, z_low, z_high), k_low, k_high)
         return integral[0]
     
-    def M(self, l, k1, k2, z_low, z_high):
-       
-        integral = integrate.quad(lambda z: self.D_C(z)**2 * self.delta_Tb_bar(self.D_C(z)) *\
-                    self.sphbess(l, k1*self.D_C(z)) *\
-                    self.sphbess(l, k2*self.D_C(z)) *\
-                    self.P_growth(z) / self.E(z), z_low, z_high)
-        # factor of 1000 to cancel velocity dependence in c/H_0
-        return 2*self.b_bias*self.c/(pi*self.H_0*1000)*integral[0]
-    def M_opt(self, l, k1, k2, z_low, z_high):
-       
-        integral = integrate.quad(lambda z: self.D_C(z)**2 * self.delta_Tb_bar(self.D_C(z)) *\
-                    self.fsphbess(l, k1*self.D_C(z)) *\
-                    self.fsphbess(l, k2*self.D_C(z)) *\
-                    self.P_growth(z) / self.E(z), z_low, z_high)
-        # factor of 1000 to cancel velocity dependence in c/H_0
-        return 2*self.b_bias*self.c/(pi*self.H_0*1000)*integral[0]
+########################################################################
+# this function uses scipy integration
 
-    def M_opt2(self, l, k1, k2, z_low, z_high):
-       
-        integral = mp.quad(lambda z: self.D_C(z)**2 * self.delta_Tb_bar(self.D_C(z)) *\
-                    self.fsphbess(l, k1*self.D_C(z)) *\
-                    self.fsphbess(l, k2*self.D_C(z)) *\
-                    self.P_growth(z) / self.E(z), [z_low, z_high])
-        # factor of 1000 to cancel velocity dependence in c/H_0
-        return 2*self.b_bias*self.c/(pi*self.H_0*1000)*integral
-
-#########################################################################
-# this new M function does the integration directly
-
-    def M_new(self, l, k1, k2, z_low, z_high):
+    def M_scipy(self, l, k1, k2, z_low, z_high):
         def integrand(z):
             r = self.D_C(z)
             integral = integrate.quad(lambda x: (1+x) / self.E(x)**3, z, np.inf)
 
-            return r**2 * self.delta_Tb_bar(r) * self.fsphbess(l,k1*r) * self.fsphbess(l,k2*r)
-
-
-
-
-
-
+            return r**2 * self.delta_Tb_bar(r) * self.sphbess(l,k1*r) * self.sphbess(l,k2*r) * self.E(z) * integral[0]**2
+        
+        integral = integrate.romberg(lambda z: integrand(z), z_low, z_high, divmax = 30)
 
         B = integrate.quad(lambda x: (1+x) / self.E(x)**3, 0, np.inf) 
-        prefactor = 2*self.b_bias*self.c/(B[0]*pi*self.H_0*1000)
-        res = 0   
+        prefactor = 2*self.b_bias*self.c/(B[0]**2 *pi*self.H_0*1000)
+        res = prefactor * integral  
+        return res
+
+
+#########################################################################
+#########################################################################
+# this function uses mpmath integration
+
+    def M_mp(self, l, k1, k2, z_low, z_high):
+        def integrand(z):
+            r = self.D_C(z)
+            integral = integrate.quad(lambda x: (1+x) / self.E(x)**3, z, np.inf)
+
+            return r**2 * self.delta_Tb_bar(r) * self.sphbess(l,k1*r) * self.sphbess(l,k2*r) * self.E(z) * integral[0]**2  
+
+        integral = mp.quad(lambda z: integrand(z), [z_low, z_high])
+
+        B = integrate.quad(lambda x: (1+x) / self.E(x)**3, 0, np.inf) 
+        prefactor = 2*self.b_bias*self.c/(B[0]**2 *pi*self.H_0*1000)
+        res = prefactor * integral  
+        return res
+
+
+#########################################################################
+
+#########################################################################
+
+    def M_integrand(self, l, k1, k2, z):
+        def integrand(z):
+            r = self.D_C(z)
+            integral = integrate.quad(lambda x: (1+x) / self.E(x)**3, z, np.inf)
+
+            return r**2 * self.delta_Tb_bar(r) * self.fsphbess(l,k1*r) * self.fsphbess(l,k2*r) * self.E(z) * integral[0]**2
+        
+        B = integrate.quad(lambda x: (1+x) / self.E(x)**3, 0, np.inf) 
+        prefactor = 2*self.b_bias*self.c/(B[0]**2 *pi*self.H_0*1000)
+        res = prefactor * integrand(z)  
         return res
 
 
@@ -283,14 +273,7 @@ class CosmoCalc(CosmoBasis):
         # x = a' 
         integral = integrate.quad(lambda x: (1+x) / self.E(x)**3, z, np.inf)        
         return prefactor * integral[0]
-    def D1_opt(self, z):
-        # need to relate a to z
-        # have done this
-        prefactor = 5 * self.O_M / 2 * self.E(z) 
-        # x = a' 
-        integral = mp.quad(lambda x: (1+x) / self.E(x)**3, [z, mp.inf])        
-        return prefactor * integral
-
+    
     # This is the part of the power spectrum that only depends on the scale k
     # Units: 
     # output:units_P = default:        P in [h^-3 * MPc^3]

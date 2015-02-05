@@ -4,6 +4,7 @@ import scipy.integrate as integrate
 import numpy as np
 import scipy.optimize as op
 import mpmath as mp
+import scipy.special as special
 
 class CosmoBasis(object):
     # Initializer fixes constant parameters
@@ -66,8 +67,14 @@ class CosmoBasis(object):
         self.k_eq = 0.073 * self.O_M * self.h**2
 #######################################################################
     # Helper function to compute spherical bessel functions
-    def sphbess(self, n, x):
-        return sqrt(pi/(2*x)) * mp.besselj(n+0.5, x)
+    def sphbess(self, l, x):
+        if x > 10*l*l:
+            bess = 1/x * sin(x - l*pi/2)
+        else:
+            bess = special.sph_jn(l,x)[0][l]
+            if isnan(bess):
+                bess = 1/x * sin(x - l*pi/2)
+        return bess
     # Helper function to compute spherical bessel functions fast
     def fsphbess(self, n, x):
         return sqrt(pi/(2*x)) * mp.fp.besselj(n+0.5, x)
