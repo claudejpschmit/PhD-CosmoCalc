@@ -67,12 +67,8 @@ if not args.p:
     print "#################################"
     
 else:
-    #print calc.M(3, 0.1, 1.0, 7, 9)
-    #profile.run('calc.M(3, 0.1, 1.0, 7, 9)')
-    #print calc.M_opt(3, 0.1, 1.0, 7, 9)
-    profile.run('calc.M_opt(3, 0.1, 1.0, 7, 9)')
-    #print calc.M_opt2(3, 0.1, 1.0, 7, 9)
-    profile.run('calc.M_new(3, 0.1, 1.0, 7, 9)')
+    profile.run('calc.M_mp_ng(3, 0.1, 1.0, 7, 9)', filename="mpquad.profile")
+    profile.run('calc.M_scipy_ng(3, 0.1, 1.0, 7, 9)', filename="scipyquad.profile")
 
 
     #profile.run('calc.M(5, 0.1, 0.2, 7, 9)')

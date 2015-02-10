@@ -15,6 +15,7 @@ from math import *
 import scipy.integrate as integrate
 import numpy as np
 import mpmath as mp
+from skmonaco import mcquad
 
 class CosmoCalc(CosmoBasis):
     
@@ -189,14 +190,33 @@ class CosmoCalc(CosmoBasis):
     # between redshifts z1 & z2.
     # use eg. z1 = 6 & z2 = 10 
     # This has units [MPc^6 K^2]
-    def corr_Tb_term1(self, l, k1, k2, z_low, z_high, k_low, k_high):
+    def corr_Tb(self, l, k1, k2, z_low, z_high, k_low, k_high):
         #TODO: figure out integration limits kkk
         integral = integrate.quad(lambda k: k**2 *\
                     self.P_delta(k, units_k = 'mpc-1', units_P = 'mpc3') *\
-                    self.M(l, k1, k, z_low, z_high) *\
-                    self.M(l, k2, k, z_low, z_high), k_low, k_high)
+                    self.M_scipy(l, k1, k, z_low, z_high) *\
+                    self.M_scipy(l, k2, k, z_low, z_high), k_low, k_high)
+        print "error in scipy quad is %s"%integral[1]
         return integral[0]
-    
+
+    def corr_Tb_mc(self, l, k1, k2, z_low, z_high, k_low, k_high):
+        integral = mcquad(lambda xs: self.Tb_integrand(l, k1, k2, xs[0], xs[1], xs[2]), npoints=10E6, xl=[float(k_low),float(z_low),float(z_low)], xu=[float(k_high),float(z_high),float(z_high)])               
+        print "error is %s"%(integral[1]*10E-8)   
+        return integral[0]
+
+#########################################################################
+
+    def Tb_integrand(self, l, k1, k2, k3, z1, z2):
+        res = k3**2*self.P_delta(k3, units_k = 'mpc-1', units_P = 'mpc3') *\
+                    self.M_integrand(l, k1, k3, z1) *\
+                    self.M_integrand(l, k2, k3, z2)
+  
+        return res
+
+
+##########################################################################
+
+
 ########################################################################
 # this function uses scipy integration
 
@@ -235,18 +255,49 @@ class CosmoCalc(CosmoBasis):
 
 
 #########################################################################
+########################################################################
+# this function uses scipy integration and no growth function
 
+    def M_scipy_ng(self, l, k1, k2, z_low, z_high):
+        def integrand(z):
+            r = self.D_C(z)
+            
+            return r**2 * self.delta_Tb_bar(r) * self.sphbess(l,k1*r) * self.sphbess(l,k2*r) / self.E(z)         
+        
+        integral = integrate.romberg(lambda z: integrand(z), z_low, z_high, divmax = 30)
+
+        
+        prefactor = 2*self.b_bias*self.c/(pi*self.H_0*1000)
+        res = prefactor * integral  
+        return res
+
+
+#########################################################################
+#########################################################################
+# this function uses mpmath integration and no growth function
+
+    def M_mp_ng(self, l, k1, k2, z_low, z_high):
+        def integrand(z):
+            r = self.D_C(z)
+            return r**2 * self.delta_Tb_bar(r) * self.sphbess(l,k1*r) * self.sphbess(l,k2*r) / self.E(z)  
+
+        integral = mp.quad(lambda z: integrand(z), [z_low, z_high])
+        
+        prefactor = 2*self.b_bias*self.c/(pi*self.H_0*1000)
+        res = prefactor * integral  
+        return res
+
+
+#########################################################################
 #########################################################################
 
     def M_integrand(self, l, k1, k2, z):
         def integrand(z):
             r = self.D_C(z)
-            integral = integrate.quad(lambda x: (1+x) / self.E(x)**3, z, np.inf)
-
-            return r**2 * self.delta_Tb_bar(r) * self.fsphbess(l,k1*r) * self.fsphbess(l,k2*r) * self.E(z) * integral[0]**2
+            
+            return r**2 * self.delta_Tb_bar(r) * self.fsphbess(l,k1*r) * self.fsphbess(l,k2*r) / self.E(z) 
         
-        B = integrate.quad(lambda x: (1+x) / self.E(x)**3, 0, np.inf) 
-        prefactor = 2*self.b_bias*self.c/(B[0]**2 *pi*self.H_0*1000)
+        prefactor = 2*self.b_bias*self.c/(pi*self.H_0*1000)
         res = prefactor * integrand(z)  
         return res
 
@@ -346,12 +397,17 @@ class CosmoCalc(CosmoBasis):
         beta = 1
         return beta**2 * integral[0]
 
-    def N(self, l, k1,k2, z_low, z_high, k_low, k_high):
-        integral = integrate.quad(lambda k: k**2 * self.M(l,k1,k,z_low,z_high) * self.Phi(l,k2, k, z_low, z_high),k_low, k_high)
-        return integral[0]
-    def Phi(self,l,k1,k2,z_low,z_high):
-        const = 2*self.bias/pi
-        #TODO: get f(z) & const right
-        #integral = integrate.quad(lambda z: f(z),z_low,z_high)
+    def N_bar(self, l, k1,k2, z_low, z_high, k_low, k_high):
+        def integrand(z):
+            r = self.D_C(z)
+            pref = 1.0/(self.E(z)*1000.0*self.H_0)**2
+            sums = r**2 * self.I(l-1, l-1, k1, k2, r) - r * (l+1)/ k1 * self.I(l-1, l, k1, k2, r) - r * (l+1) / k2 * self.I(l, l-1, k1, k2, r) + (l+1)**2 / (k1*k2) * self.I(l, l, k1, k2, r)
+            return pref * sums
 
-        return const #* integral[0]
+        integral = mp.quad(lambda z: integrand(z), [z_low, z_high])
+
+
+    def I(self, l1, l2, k1, k2, r):
+        prefactor = 2*self.b_bias*self.c/pi
+        res = self.delta_Tb_bar(r) * self.fsphbess(l1,k1*r) * self.fsphbess(l2,k2*r) 
+        return prefactor * res

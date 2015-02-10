@@ -5,6 +5,7 @@
 from CosmologyCalculatorClass import CosmoCalc
 import matplotlib.pyplot as plt
 import numpy as np
+from math import *
 
 class CosmoPlot(CosmoCalc):
     ############################ Plotting ############################
@@ -158,3 +159,22 @@ class CosmoPlot(CosmoCalc):
         
         plt.savefig('powerspectrum.png')
         plt.show()
+
+    def plot_P_growth(self, z_low, z_high, step):
+        stepsize = (z_high - z_low) / float(step)
+        x = [z_low + float(i) * stepsize for i in range(0, step)]
+        y1 = [self.P_growth(z) for z in x]
+        y2 = [e**(-z) for z in x]
+        
+        plot1 = plt.plot(x, y1, label = r'$P_{growth}$')
+        plot2 = plt.plot(x, y2, label = r'exponential')
+        
+        plt.legend(loc = 'upper left')
+        plt.title(r'$P_{growth}$ vs $z$' )
+        plt.xlabel(r'$z$')
+        plt.ylabel(r'$P_{growth}$')
+        plt.grid(True)
+        
+        plt.savefig('P_growth.png')
+        plt.show()
+

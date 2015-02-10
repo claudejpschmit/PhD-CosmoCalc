@@ -8,10 +8,10 @@ import argparse
 ############## Parsing input ##############
 
 descr = 'This program uses the Cosmology Calculator Class \
-         to write the function M_l to a file. This program \
-         gives the values of M_l(k1,k2) for a specified l & k1 \
-         over a range of k2. The following parameters should \
-         be defined: l, k_fixed, k_low, k_high, steps'
+        to write the function M_l to a file. This program \
+        gives the values of M_l(k1,k2) for a specified l & k1 \
+        over a range of k2. The following parameters should \
+        be defined: l, k_fixed, k_low, k_high, steps'
 
 parser = argparse.ArgumentParser(description=descr)
 parser.add_argument('--version', action='version', 
@@ -45,6 +45,8 @@ parser.add_argument('--z_high', metavar = 'z_high',
         type = float, default = 9, help = 'top bound for z integration')
 parser.add_argument('--method', metavar = 'method', 
         type = float, default = 0, help = 'Integration method, either 0 for scipy or or 1 mp')
+parser.add_argument('--g', metavar = 'growth function', 
+        type = float, default = 1, help = 'Including growth function 1, not including 0')
 
 
 
@@ -54,7 +56,13 @@ args = parser.parse_args()
 
 writer = CosmoWrite(args.H_0, args.O_M, args.O_V, args.T_CMB)
 
-if int(args.method) == 0:
-    writer.calculate_Ml_scipy(args.l, args.k_fixed, args.k2_low, args.k2_high, args.z_low, args.z_high, int(args.steps), args.stepsize)
-elif int(args.method) == 1:
-    writer.calculate_Ml_mp(args.l, args.k_fixed, args.k2_low, args.k2_high, args.z_low, args.z_high, int(args.steps), args.stepsize)
+if int(args.g) == 1:
+    if int(args.method) == 0:
+        writer.calculate_Ml_scipy(args.l, args.k_fixed, args.k2_low, args.k2_high, args.z_low, args.z_high, int(args.steps), args.stepsize)
+    elif int(args.method) == 1:
+        writer.calculate_Ml_mp(args.l, args.k_fixed, args.k2_low, args.k2_high, args.z_low, args.z_high, int(args.steps), args.stepsize)
+elif int(args.g) == 0:
+    if int(args.method) == 0:
+        writer.calculate_Ml_scipy_ng(args.l, args.k_fixed, args.k2_low, args.k2_high, args.z_low, args.z_high, int(args.steps), args.stepsize)
+    elif int(args.method) == 1:
+        writer.calculate_Ml_mp_ng(args.l, args.k_fixed, args.k2_low, args.k2_high, args.z_low, args.z_high, int(args.steps), args.stepsize)

@@ -12,7 +12,7 @@ class CosmoBasis(object):
         # Hubble constant H_0 [km s^-1 Mpc^-1]
         self.H_0 = H_0
         # Hubble parameter h [ dimensionless ]
-        self.h = self.H_0 / 100
+        self.h = self.H_0 / 100.0
         # Relative Matter density
         self.O_M = O_M
         # Relative Vacuum density

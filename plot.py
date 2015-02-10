@@ -44,8 +44,9 @@ plotter = CosmoPlot(args.H_0, args.O_M, args.O_V, args.T_CMB)
 #plotter.plot_T_k(5, 1000, 1000)
 #plotter.plot_T_CMB(0,1000, 1000)
 #plotter.plot_age(200,1100, 2000)
+#plotter.plot_P_growth(0,10,100)
 
 #### this has errors
 #plotter.plot_corr_Tb_no_distortions(1, 1000, 0.01, 0.1, 6, 10, 1000)
-plotter.plot_Ml(l=5, k_fixed=0.1, k2_low=0.2, k2_high=1, z_low=7, z_high=9, step=10)
-#plotter.plot_P(0.001,10, 10000, units_k = 'default', units_P = 'default')
+#plotter.plot_Ml(l=5, k_fixed=0.1, k2_low=0.2, k2_high=1, z_low=7, z_high=9, step=10)
+plotter.plot_P(0.001,10, 10000, units_k = 'default', units_P = 'default')
