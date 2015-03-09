@@ -197,20 +197,26 @@ class CosmoCalc(CosmoBasis):
                     self.M(l, k1, k, z_low, z_high) *\
                     self.M(l, k2, k, z_low, z_high), k_low, k_high, 1000)
         return integral
+    
+    ############### Then, we include redshift space distortions #########
+   
+    # Calculates the Tb correlation with redshift space distortions 
+    # between redshifts z1 & z2.
+    # use eg. z1 = 6 & z2 = 10 
+    # This has units [MPc^6 K^2]
+    def corr_Tb_rsd(self, l, k1, k2, z_low, z_high, k_low, k_high):
+        def integrand(k):
+            res = k**2 *  self.P_delta(k, units_k = 'mpc-1', units_P = 'mpc3') *\
+                   (self.M(l, k1, k, z_low, z_high) * self.M(l, k2, k, z_low, z_high) +\
+                   self.bias * self.beta * (self.M(l, k1, k, z_low, z_high) * self.N_bar(l, k2, k, z_low, z_high) + self.N_bar(l, k1, k, z_low, z_high) * self.M(l, k2, k, z_low, z_high)) +\
+                   self.bias**2 * self.beta**2 * self.N_bar(l, k1, k, z_low, z_high) * self.N_bar(l, k2, k, z_low, z_high))
+            return res
 
-#########################################################################
+        integral = self.integrate_simps(lambda k: integrand(k), k_low, k_high, 1000)
+        return integral
 
-    def Tb_integrand(self, l, k1, k2, k3, z1, z2):
-        res = k3**2*self.P_delta(k3, units_k = 'mpc-1', units_P = 'mpc3') *\
-                    self.M_integrand(l, k1, k3, z1) *\
-                    self.M_integrand(l, k2, k3, z2)
-  
-        return res
-
-
-##########################################################################
-########################################################################
-# this function uses simple Simpson integration and interpolates spherical Bessels.
+    ########################################################################
+    # this function uses simple Simpson integration and interpolates spherical Bessels.
 
     def M(self, l, k1, k2, z_low, z_high):
         def integrand(z):
@@ -228,11 +234,11 @@ class CosmoCalc(CosmoBasis):
         return res
 
 
-#########################################################################
+    #########################################################################
 
 
-########################################################################
-# this function uses scipy integration
+    ########################################################################
+    # this function uses scipy integration
 
     def M_scipy(self, l, k1, k2, z_low, z_high):
         def integrand(z):
@@ -249,9 +255,9 @@ class CosmoCalc(CosmoBasis):
         return res
 
 
-#########################################################################
-#########################################################################
-# this function uses mpmath integration
+    #########################################################################
+    #########################################################################
+    # this function uses mpmath integration
 
     def M_mp(self, l, k1, k2, z_low, z_high):
         def integrand(z):
@@ -268,9 +274,9 @@ class CosmoCalc(CosmoBasis):
         return res
 
 
-#########################################################################
-########################################################################
-# this function uses scipy integration and no growth function
+    #########################################################################
+    ########################################################################
+    # this function uses scipy integration and no growth function
 
     def M_scipy_ng(self, l, k1, k2, z_low, z_high):
         def integrand(z):
@@ -286,9 +292,9 @@ class CosmoCalc(CosmoBasis):
         return res
 
 
-#########################################################################
-#########################################################################
-# this function uses mpmath integration and no growth function
+    #########################################################################
+    #########################################################################
+    # this function uses mpmath integration and no growth function
 
     def M_mp_ng(self, l, k1, k2, z_low, z_high):
         def integrand(z):
@@ -302,7 +308,7 @@ class CosmoCalc(CosmoBasis):
         return res
 
 
-#########################################################################
+    #########################################################################
 
     # Mean Brightness Temperature fluctuations at distance r (comoving) [K]
     def delta_Tb_bar(self, r):
@@ -368,50 +374,33 @@ class CosmoCalc(CosmoBasis):
         res = res * bracket**(-0.25)
         return res
     
-    # Calculates the second  and third 
-    # term in the full Tb correlation 
-    # between redshifts z1 & z2.
-    # use eg. z1 = 6 & z2 = 10 
-    # This has units []
-    def corr_Tb_term23(self, l, k1, k2, z_low, z_high, k_low, k_high):
-        #TODO: figure out integration limits kkk
-        integral = integrate.quad(lambda k: k**(-2) *\
-                    self.P_delta(k, units_k = 'mpc-1', units_P = 'mpc3') *\
-                    self.M(l, k1, k, z_low, z_high) *\
-                    self.N(l, k2, k, z_low, z_high, k_low, k_high), k_low, k_high)
-        beta = 1
-
-        return beta*integral[0]
     
-    # Calculates the fourth 
-    # term in the full Tb correlation 
-    # between redshifts z1 & z2.
-    # use eg. z1 = 6 & z2 = 10 
-    # This has units []
-    def corr_Tb_term4(self, l, k1, k2, z_low, z_high, k_low, k_high):
-        #TODO: figure out integration limits kkk
-        integral = integrate.quad(lambda k: k**(-6) *\
-                    self.P_delta(k, units_k = 'mpc-1', units_P = 'mpc3') *\
-                    self.N(l, k1, k, z_low, z_high, k_low, k_high) *\
-                    self.N(l, k2, k, z_low, z_high, k_low, k_high), k_low, k_high)
-        beta = 1
-        return beta**2 * integral[0]
 
-    def N_bar(self, l, k1,k2, z_low, z_high, k_low, k_high):
-        def integrand(z):
-            r = self.D_C(z)
-            pref = 1.0/(self.E(z)*1000.0*self.H_0)**2
-            sums = r**2 * self.I(l-1, l-1, k1, k2, r) - r * (l+1)/ k1 * self.I(l-1, l, k1, k2, r) - r * (l+1) / k2 * self.I(l, l-1, k1, k2, r) + (l+1)**2 / (k1*k2) * self.I(l, l, k1, k2, r)
-            return pref * sums
+    
+    # for included rsd #
+    ######### Separable growth
+    def I(self, l1, l2, k1, k2, z, r):
+        integral = integrate.quad(lambda x: (1+x) / self.E(x)**3, z, np.inf)
+        res = self.delta_Tb_bar(r) * self.sphbess_interp(l1,k1*r) * self.sphbess_interp(l2,k2*r) * integral[0]
 
-        integral = mp.quad(lambda z: integrand(z), [z_low, z_high])
-
-
-    def I(self, l1, l2, k1, k2, z):
-        
-        r = self.D_C(z)
-        prefactor = 2*self.b_bias*self.c/pi
-        res = self.delta_Tb_bar(r) * self.sphbess_interp(l1,k1*r) * self.sphbess_interp(l2,k2*r)
-        #integral = integrate.quad(lambda x: (1+x) / self.E(x)**3, z, np.inf)
         
         return prefactor * res
+    
+    def N_bar(self, l, k1,k2, z_low, z_high):
+        def integrand(z):
+            r = self.D_C(z)
+            pref = 1.0/(1.0 + z)
+            sums = r**2 * self.I(l-1, l-1, k1, k2, z, r) -\
+                   r * (l+1)/ k1 * self.I(l-1, l, k1, k2, z, r) -\
+                   r * (l+1) / k2 * self.I(l, l-1, k1, k2, z, r) +\
+                   (l+1)**2 / (k1*k2) * self.I(l, l, k1, k2, z, r)
+            return pref * sums
+        
+        B = integrate.quad(lambda x: (1+x) / self.E(x)**3, 0, np.inf)
+        prefactor = 2*self.b_bias*self.c/(B[0]*pi*self.H_0 * 1000.0)
+        integral = self.integrate_simps(lambda z: integrand(z), z_low, z_high)
+
+        return prefactor * integral[0]
+
+
+    

@@ -64,6 +64,8 @@ class CosmoBasis(object):
         #TODO: get a good bias factor
         # bias factor
         self.b_bias = 1
+        # beta factor
+        self.beta = 1
         # k_eq scalles at horizon crossing [Mpc^-1]
         self.k_eq = 0.073 * self.O_M * self.h**2
         
