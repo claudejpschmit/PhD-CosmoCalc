@@ -24,6 +24,8 @@ parser.add_argument('--z', metavar = 'z',
         type = float, default = 3, help = 'redshift')
 parser.add_argument('--T_CMB', metavar = 'T_CMB', 
         type = float, default = 2.75, help = 'CMB temperature')
+parser.add_argument('--bessel', metavar = 'bessel', 
+        type = str, default = 'bessel_table.dat', help = 'Filename of spherical bessel table')
 
 
 args = parser.parse_args()
@@ -31,7 +33,7 @@ z = args.z
 
 ################# Output ################## 
 
-plotter = CosmoPlot(args.H_0, args.O_M, args.O_V, args.T_CMB)
+plotter = CosmoPlot(args.H_0, args.O_M, args.O_V, args.T_CMB, args.bessel)
 #plotter.plot_distances()
 #plotter.plot_densities_rho(5000, 100)
 #plotter.plot_densities_Omega(10000, 100)
@@ -48,5 +50,5 @@ plotter = CosmoPlot(args.H_0, args.O_M, args.O_V, args.T_CMB)
 
 #### this has errors
 #plotter.plot_corr_Tb_no_distortions(1, 1000, 0.01, 0.1, 6, 10, 1000)
-#plotter.plot_Ml(l=5, k_fixed=0.1, k2_low=0.2, k2_high=1, z_low=7, z_high=9, step=10)
-plotter.plot_P(0.001,10, 10000, units_k = 'default', units_P = 'default')
+plotter.plot_Ml_scipy(l=5, k_fixed=0.1, k2_low=0.2, k2_high=1, z_low=7, z_high=9, steps=100)
+#plotter.plot_P(0.001,10, 10000, units_k = 'default', units_P = 'default')

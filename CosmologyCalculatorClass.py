@@ -15,7 +15,7 @@ from math import *
 import scipy.integrate as integrate
 import numpy as np
 import mpmath as mp
-from skmonaco import mcquad
+#from skmonaco import mcquad
 
 class CosmoCalc(CosmoBasis):
     
@@ -192,17 +192,11 @@ class CosmoCalc(CosmoBasis):
     # This has units [MPc^6 K^2]
     def corr_Tb(self, l, k1, k2, z_low, z_high, k_low, k_high):
         #TODO: figure out integration limits kkk
-        integral = integrate.quad(lambda k: k**2 *\
+        integral = self.integrate_simps(lambda k: k**2 *\
                     self.P_delta(k, units_k = 'mpc-1', units_P = 'mpc3') *\
-                    self.M_scipy(l, k1, k, z_low, z_high) *\
-                    self.M_scipy(l, k2, k, z_low, z_high), k_low, k_high)
-        print "error in scipy quad is %s"%integral[1]
-        return integral[0]
-
-    def corr_Tb_mc(self, l, k1, k2, z_low, z_high, k_low, k_high):
-        integral = mcquad(lambda xs: self.Tb_integrand(l, k1, k2, xs[0], xs[1], xs[2]), npoints=10E6, xl=[float(k_low),float(z_low),float(z_low)], xu=[float(k_high),float(z_high),float(z_high)])               
-        print "error is %s"%(integral[1]*10E-8)   
-        return integral[0]
+                    self.M(l, k1, k, z_low, z_high) *\
+                    self.M(l, k2, k, z_low, z_high), k_low, k_high, 1000)
+        return integral
 
 #########################################################################
 
@@ -215,6 +209,26 @@ class CosmoCalc(CosmoBasis):
 
 
 ##########################################################################
+########################################################################
+# this function uses simple Simpson integration and interpolates spherical Bessels.
+
+    def M(self, l, k1, k2, z_low, z_high):
+        def integrand(z):
+            r = self.D_C(z)
+            integral = integrate.quad(lambda x: (1+x) / self.E(x)**3, z, np.inf)
+
+            return r**2 * self.delta_Tb_bar(r) * self.sphbess_interp(l,k1*r) *\
+                    self.sphbess_interp(l,k2*r) * self.E(z) * integral[0]**2
+        
+        integral = self.integrate_simps(lambda z: integrand(z), z_low, z_high, 100)
+
+        B = integrate.quad(lambda x: (1+x) / self.E(x)**3, 0, np.inf) 
+        prefactor = 2*self.b_bias*self.c/(B[0]**2 *pi*self.H_0*1000)
+        res = prefactor * integral  
+        return res
+
+
+#########################################################################
 
 
 ########################################################################
@@ -227,11 +241,11 @@ class CosmoCalc(CosmoBasis):
 
             return r**2 * self.delta_Tb_bar(r) * self.sphbess(l,k1*r) * self.sphbess(l,k2*r) * self.E(z) * integral[0]**2
         
-        integral = integrate.romberg(lambda z: integrand(z), z_low, z_high, divmax = 30)
+        integral = integrate.quad(lambda z: integrand(z), z_low, z_high)
 
         B = integrate.quad(lambda x: (1+x) / self.E(x)**3, 0, np.inf) 
         prefactor = 2*self.b_bias*self.c/(B[0]**2 *pi*self.H_0*1000)
-        res = prefactor * integral  
+        res = prefactor * integral[0]  
         return res
 
 

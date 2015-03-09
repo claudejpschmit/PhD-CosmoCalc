@@ -31,6 +31,8 @@ parser.add_argument('--T_CMB', metavar = 'T_CMB',
         type = float, default = 2.75, help = 'CMB temperature')
 parser.add_argument('--p', metavar = 'profiling', 
         type = float, default = False, help = 'Turns on (1) or off (0) program profiling')
+parser.add_argument('--bessel', metavar = 'bessel', 
+        type = str, default = 'bessel_table.dat', help = 'Filename of spherical bessel table')
 
 args = parser.parse_args()
 z = args.z
@@ -41,7 +43,7 @@ z = args.z
 def convert_to_gy(age):
     return age * 10**10 * 3.08568 / (365.25 * 24 * 3600)
 
-calc = CosmoCalc(args.H_0, args.O_M, args.O_V, args.T_CMB)
+calc = CosmoCalc(args.H_0, args.O_M, args.O_V, args.T_CMB, args.bessel)
 
 if not args.p:
     print "\nFor a Universe with H0 = %s, Omega_M = %s, Omega_V = %s, z = %s and T_CMB = %s K:\n" % (calc.H_0, calc.O_M, calc.O_V, z, calc.T_CMB)
@@ -66,6 +68,10 @@ if not args.p:
     
     print "#################################"
     
+    #print calc.M(3, 0.01, 1.0, 7, 9)
+    #print calc.M_mp(3, 0.01, 1.0, 7, 9)
+    #print calc.M_scipy(3, 0.01, 1.0, 7, 9)
+
 else:
     profile.run('calc.M_mp_ng(3, 0.1, 1.0, 7, 9)', filename="mpquad.profile")
     profile.run('calc.M_scipy_ng(3, 0.1, 1.0, 7, 9)', filename="scipyquad.profile")

@@ -5,6 +5,7 @@
 from CosmologyCalculatorClass import CosmoCalc
 import matplotlib.pyplot as plt
 import numpy as np
+from decimal import Decimal
 from math import *
 
 class CosmoPlot(CosmoCalc):
@@ -112,19 +113,34 @@ class CosmoPlot(CosmoCalc):
         plt.show()
     
     
-    def plot_Ml(self, l, k_fixed, k2_low, k2_high, z_low, z_high, step):
-        stepsize = (k2_high - k2_low) / float(step)
-        x = [k2_low + float(i) * stepsize for i in range(0, step)]
+    def plot_Ml(self, l, k_fixed, k2_low, k2_high, z_low, z_high, steps):
+        stepsize = (k2_high - k2_low) / float(steps)
+        x = [k2_low + float(i) * stepsize for i in range(0, steps)]
         y1 = [self.M(l, k_fixed, k2, z_low, z_high) for k2 in x]
-        plot1 = plt.loglog(x, y1, basex = 10, basey = 10, label = r'$M_l(k, k\')$')
+        plot1 = plt.loglog(x, y1, basex = 10, basey = 10, label = r'$M_l(k, kp)$')
         plt.legend(loc = 'upper left')
-        plt.title(r'$M_l(k, k\')$ vs $k\'$ for $l = 5$' )
-        plt.xlabel(r'$k\'$')
-        plt.ylabel(r'$M_l(k, k\')$')
+        plt.title(r'$M_l(k, kp)$ vs $kp$ for $l = 5$' )
+        plt.xlabel(r'$kp$')
+        plt.ylabel(r'$M_l(k, kp)$')
         plt.grid(True)
         
         plt.savefig('M_l.png')
         plt.show()
+
+    def plot_Ml_scipy(self, l, k_fixed, k2_low, k2_high, z_low, z_high, steps):
+        stepsize = (k2_high - k2_low) / float(steps)
+        x = [k2_low + float(i) * stepsize for i in range(0, steps)]
+        y1 = [self.M_scipy(l, k_fixed, k2, z_low, z_high) for k2 in x]
+        plot1 = plt.loglog(x, y1, basex = 10, basey = 10, label = r'$M_l(k, kp)$')
+        plt.legend(loc = 'upper left')
+        plt.title(r'$M_l(k, kp)$ vs $kp$ for $l = 5$' )
+        plt.xlabel(r'$kp$')
+        plt.ylabel(r'$M_l(k, kp)$')
+        plt.grid(True)
+        
+        plt.savefig('M_l.png')
+        plt.show()
+
 
     def plot_P(self, kmin, kmax, step, units_k = 'default', units_P = 'default'):
         stepsize = (kmax - kmin) / float(step)
@@ -178,3 +194,32 @@ class CosmoPlot(CosmoCalc):
         plt.savefig('P_growth.png')
         plt.show()
 
+    def plot_bessel(self, l):
+        nmax = int((self.bessel_xmax - self.bessel_xmin)/self.bessel_xstep)
+        x = [self.bessel_xmin + n*self.bessel_xstep for n in range(0, nmax)]
+        y = [float(self.besseltable[l][n]) for n in range(0,nmax)]
+        plot1 = plt.plot(x, y, label = r'$j_l(x)$')
+        
+        plt.legend(loc = 'upper left')
+        plt.title(r'$j_l(x)$ vs $x$' )
+        plt.xlabel(r'$x$')
+        plt.ylabel(r'$j_l(x)$')
+        plt.grid(True)
+        plt.show()
+    def plot_bessel_interp(self, l):
+        stepsize = 0.01
+        nmax = int((self.bessel_xmax-self.bessel_xmin)/stepsize)
+        x = [self.bessel_xmin + n*stepsize for n in range(0, nmax)]
+        y = [self.sphbess_interp(l, xi) for xi in x]
+        plot1 = plt.plot(x, y, label = r'$j_l(x)$')
+        nmax = int((self.bessel_xmax - self.bessel_xmin)/self.bessel_xstep)
+        x1 = [self.bessel_xmin + n*self.bessel_xstep for n in range(0, nmax-1)]
+        y1 = [float(self.besseltable[l][n]) for n in range(0,nmax-1)]
+        plot2 = plt.plot(x1, y1, label = r'$j_l(x)$')
+
+        plt.legend(loc = 'upper left')
+        plt.title(r'$j_l(x)$ vs $x$' )
+        plt.xlabel(r'$x$')
+        plt.ylabel(r'$j_l(x)$')
+        plt.grid(True)
+        plt.show()

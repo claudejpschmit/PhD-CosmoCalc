@@ -28,7 +28,7 @@ parser.add_argument('--z', metavar = 'z',
 parser.add_argument('--T_CMB', metavar = 'T_CMB', 
         type = float, default = 2.75, help = 'CMB temperature')
 parser.add_argument('--l', metavar = 'l', 
-        type = float, default = 5, help = 'Spherical Bessel index')
+        type = int, default = 5, help = 'Spherical Bessel index')
 parser.add_argument('--k_fixed', metavar = 'k_fixed', 
         type = float, default = 0.1, help = 'k1')
 parser.add_argument('--k2_low', metavar = 'k2_low', 
@@ -36,7 +36,7 @@ parser.add_argument('--k2_low', metavar = 'k2_low',
 parser.add_argument('--k2_high', metavar = 'k2_high', 
         type = float, default = 0.5, help = 'top bound for k2')
 parser.add_argument('--steps', metavar = 'steps', 
-        type = float, default = 10000, help = 'Number of steps between k_low and k_high')
+        type = int, default = 10000, help = 'Number of steps between k_low and k_high')
 parser.add_argument('--stepsize', metavar = 'stepsize', 
         type = float, default = 0, help = 'Stepsize. Non-zero value leads to averwriting steps variable')
 parser.add_argument('--z_low', metavar = 'z_low', 
@@ -44,9 +44,11 @@ parser.add_argument('--z_low', metavar = 'z_low',
 parser.add_argument('--z_high', metavar = 'z_high', 
         type = float, default = 9, help = 'top bound for z integration')
 parser.add_argument('--method', metavar = 'method', 
-        type = float, default = 0, help = 'Integration method, either 0 for scipy or or 1 mp')
+        type = int, default = 0, help = 'Integration method, either 0 for scipy or 1 for mp or 2 for simpson')
 parser.add_argument('--g', metavar = 'growth function', 
-        type = float, default = 1, help = 'Including growth function 1, not including 0')
+        type = bool, default = True, help = 'Including growth function True, not including False')
+parser.add_argument('--bessel', metavar = 'bessel', 
+        type = str, default = 'bessel_table.dat', help = 'Filename of spherical bessel table')
 
 
 
@@ -54,15 +56,18 @@ args = parser.parse_args()
 
 ################# Output ################## 
 
-writer = CosmoWrite(args.H_0, args.O_M, args.O_V, args.T_CMB)
+writer = CosmoWrite(args.H_0, args.O_M, args.O_V, args.T_CMB, args.bessel)
 
-if int(args.g) == 1:
-    if int(args.method) == 0:
-        writer.calculate_Ml_scipy(args.l, args.k_fixed, args.k2_low, args.k2_high, args.z_low, args.z_high, int(args.steps), args.stepsize)
-    elif int(args.method) == 1:
-        writer.calculate_Ml_mp(args.l, args.k_fixed, args.k2_low, args.k2_high, args.z_low, args.z_high, int(args.steps), args.stepsize)
-elif int(args.g) == 0:
-    if int(args.method) == 0:
-        writer.calculate_Ml_scipy_ng(args.l, args.k_fixed, args.k2_low, args.k2_high, args.z_low, args.z_high, int(args.steps), args.stepsize)
-    elif int(args.method) == 1:
-        writer.calculate_Ml_mp_ng(args.l, args.k_fixed, args.k2_low, args.k2_high, args.z_low, args.z_high, int(args.steps), args.stepsize)
+if args.g:
+    if args.method == 0:
+        writer.calculate_Ml_scipy(args.l, args.k_fixed, args.k2_low, args.k2_high, args.z_low, args.z_high, args.steps, args.stepsize)
+    elif args.method == 1:
+        writer.calculate_Ml_mp(args.l, args.k_fixed, args.k2_low, args.k2_high, args.z_low, args.z_high, args.steps, args.stepsize)
+    elif args.method == 2:
+        writer.calculate_Ml(args.l, args.k_fixed, args.k2_low, args.k2_high, args.z_low, args.z_high, args.steps, args.stepsize)
+
+else:
+    if args.method == 0:
+        writer.calculate_Ml_scipy_ng(args.l, args.k_fixed, args.k2_low, args.k2_high, args.z_low, args.z_high, args.steps, args.stepsize)
+    elif args.method == 1:
+        writer.calculate_Ml_mp_ng(args.l, args.k_fixed, args.k2_low, args.k2_high, args.z_low, args.z_high, args.steps, args.stepsize)
