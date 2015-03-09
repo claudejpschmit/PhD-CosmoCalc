@@ -45,12 +45,8 @@ parser.add_argument('--z_high', metavar = 'z_high',
         type = float, default = 9, help = 'top bound for z integration')
 parser.add_argument('--method', metavar = 'method', 
         type = int, default = 0, help = 'Integration method, either 0 for scipy or 1 for mp or 2 for simpson')
-parser.add_argument('--g', metavar = 'growth function', 
-        type = bool, default = True, help = 'Including growth function True, not including False')
 parser.add_argument('--bessel', metavar = 'bessel', 
         type = str, default = 'bessel_table.dat', help = 'Filename of spherical bessel table')
-
-
 
 args = parser.parse_args()
 
@@ -58,16 +54,9 @@ args = parser.parse_args()
 
 writer = CosmoWrite(args.H_0, args.O_M, args.O_V, args.T_CMB, args.bessel)
 
-if args.g:
-    if args.method == 0:
-        writer.calculate_Ml_scipy(args.l, args.k_fixed, args.k2_low, args.k2_high, args.z_low, args.z_high, args.steps, args.stepsize)
-    elif args.method == 1:
-        writer.calculate_Ml_mp(args.l, args.k_fixed, args.k2_low, args.k2_high, args.z_low, args.z_high, args.steps, args.stepsize)
-    elif args.method == 2:
-        writer.calculate_Ml(args.l, args.k_fixed, args.k2_low, args.k2_high, args.z_low, args.z_high, args.steps, args.stepsize)
-
-else:
-    if args.method == 0:
-        writer.calculate_Ml_scipy_ng(args.l, args.k_fixed, args.k2_low, args.k2_high, args.z_low, args.z_high, args.steps, args.stepsize)
-    elif args.method == 1:
-        writer.calculate_Ml_mp_ng(args.l, args.k_fixed, args.k2_low, args.k2_high, args.z_low, args.z_high, args.steps, args.stepsize)
+if args.method == 0:
+    writer.calculate_Ml_scipy(args.l, args.k_fixed, args.k2_low, args.k2_high, args.z_low, args.z_high, args.steps, args.stepsize)
+elif args.method == 1:
+    writer.calculate_Ml_mp(args.l, args.k_fixed, args.k2_low, args.k2_high, args.z_low, args.z_high, args.steps, args.stepsize)
+elif args.method == 2:
+    writer.calculate_Ml(args.l, args.k_fixed, args.k2_low, args.k2_high, args.z_low, args.z_high, args.steps, args.stepsize)

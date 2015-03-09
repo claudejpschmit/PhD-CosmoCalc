@@ -87,6 +87,7 @@ class CosmoBasis(object):
            
         bessel_table.pop(0)
         return bessel_table
+
     # Interpolation function for Spherical bessel functions.
     # This works as intended and is quite fast. Requires a precalculated 
     # grid of bessel values. Use code in Bessel/ to generate this list.
@@ -97,7 +98,6 @@ class CosmoBasis(object):
 
         res = (y1-y0)*(n-int(n)) + y0
         return res
-    
     
     # Helper function to compute spherical bessel functions
     def sphbess(self, l, x):
@@ -117,6 +117,7 @@ class CosmoBasis(object):
     # Helper function to compute spherical bessel functions fast
     def fsphbess(self, n, x):
         return sqrt(pi/(2*x)) * mp.fp.besselj(n+0.5, x)
+
     # Helper function to compute spherical bessel functions fast
     def mp_sphbess(self, n, x):
         return sqrt(pi/(2*x)) * mp.fp.besselj(n+0.5, x)
@@ -134,6 +135,7 @@ class CosmoBasis(object):
     def Z_opt(self, z):
         integral = mp.fp.quad(lambda x: 1.0/self.E(x), [0, z])
         return integral
+
     # Curvature term in the metric:
     #   sinh x, x or sin x 
     def S_k(self, x):
@@ -144,6 +146,7 @@ class CosmoBasis(object):
         else:
             return sin(x)
 
+    # Simple Simpson integration method. Requires even number of steps.
     def integrate_simps(self, f, a, b, steps):
         if steps % 2:
             raise ValueError("There must be an even number of steps, received n = %d" % steps)
@@ -156,5 +159,3 @@ class CosmoBasis(object):
             res += 2 * f(a + n * stepsize)
 
         return res * stepsize / 3.0
-
-

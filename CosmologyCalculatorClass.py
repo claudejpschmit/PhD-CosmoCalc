@@ -218,12 +218,12 @@ class CosmoCalc(CosmoBasis):
             integral = integrate.quad(lambda x: (1+x) / self.E(x)**3, z, np.inf)
 
             return r**2 * self.delta_Tb_bar(r) * self.sphbess_interp(l,k1*r) *\
-                    self.sphbess_interp(l,k2*r) * self.E(z) * integral[0]**2
+                    self.sphbess_interp(l,k2*r)  * integral[0]
         
         integral = self.integrate_simps(lambda z: integrand(z), z_low, z_high, 100)
 
         B = integrate.quad(lambda x: (1+x) / self.E(x)**3, 0, np.inf) 
-        prefactor = 2*self.b_bias*self.c/(B[0]**2 *pi*self.H_0*1000)
+        prefactor = 2*self.b_bias*self.c/(B[0]*pi*self.H_0*1000)
         res = prefactor * integral  
         return res
 
@@ -239,12 +239,12 @@ class CosmoCalc(CosmoBasis):
             r = self.D_C(z)
             integral = integrate.quad(lambda x: (1+x) / self.E(x)**3, z, np.inf)
 
-            return r**2 * self.delta_Tb_bar(r) * self.sphbess(l,k1*r) * self.sphbess(l,k2*r) * self.E(z) * integral[0]**2
+            return r**2 * self.delta_Tb_bar(r) * self.sphbess(l,k1*r) * self.sphbess(l,k2*r) * self.E(z) * integral[0]
         
         integral = integrate.quad(lambda z: integrand(z), z_low, z_high)
 
         B = integrate.quad(lambda x: (1+x) / self.E(x)**3, 0, np.inf) 
-        prefactor = 2*self.b_bias*self.c/(B[0]**2 *pi*self.H_0*1000)
+        prefactor = 2*self.b_bias*self.c/(B[0] *pi*self.H_0*1000)
         res = prefactor * integral[0]  
         return res
 
@@ -258,12 +258,12 @@ class CosmoCalc(CosmoBasis):
             r = self.D_C(z)
             integral = integrate.quad(lambda x: (1+x) / self.E(x)**3, z, np.inf)
 
-            return r**2 * self.delta_Tb_bar(r) * self.sphbess(l,k1*r) * self.sphbess(l,k2*r) * self.E(z) * integral[0]**2  
+            return r**2 * self.delta_Tb_bar(r) * self.sphbess(l,k1*r) * self.sphbess(l,k2*r) * self.E(z) * integral[0] 
 
         integral = mp.quad(lambda z: integrand(z), [z_low, z_high])
 
         B = integrate.quad(lambda x: (1+x) / self.E(x)**3, 0, np.inf) 
-        prefactor = 2*self.b_bias*self.c/(B[0]**2 *pi*self.H_0*1000)
+        prefactor = 2*self.b_bias*self.c/(B[0] *pi*self.H_0*1000)
         res = prefactor * integral  
         return res
 
@@ -421,7 +421,11 @@ class CosmoCalc(CosmoBasis):
         integral = mp.quad(lambda z: integrand(z), [z_low, z_high])
 
 
-    def I(self, l1, l2, k1, k2, r):
+    def I(self, l1, l2, k1, k2, z):
+        
+        r = self.D_C(z)
         prefactor = 2*self.b_bias*self.c/pi
-        res = self.delta_Tb_bar(r) * self.fsphbess(l1,k1*r) * self.fsphbess(l2,k2*r) 
+        res = self.delta_Tb_bar(r) * self.sphbess_interp(l1,k1*r) * self.sphbess_interp(l2,k2*r)
+        #integral = integrate.quad(lambda x: (1+x) / self.E(x)**3, z, np.inf)
+        
         return prefactor * res

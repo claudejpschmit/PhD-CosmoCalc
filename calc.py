@@ -73,10 +73,6 @@ if not args.p:
     #print calc.M_scipy(3, 0.01, 1.0, 7, 9)
 
 else:
-    profile.run('calc.M_mp_ng(3, 0.1, 1.0, 7, 9)', filename="mpquad.profile")
-    profile.run('calc.M_scipy_ng(3, 0.1, 1.0, 7, 9)', filename="scipyquad.profile")
-
-
-    #profile.run('calc.M(5, 0.1, 0.2, 7, 9)')
-    #profile.run('calc.age_of_universe_opt(0)', filename="mpquad.profile")
-    #profile.run('calc.age_of_universe(0)', filename="scipyquad.profile")
+    profile.run('calc.M(3, 0.1, 1.0, 7, 9)', filename="interpol.profile")
+    profile.run('calc.M_mp(3, 0.1, 1.0, 7, 9)', filename="mpquad.profile")
+    profile.run('calc.M_scipy(3, 0.1, 1.0, 7, 9)', filename="scipyquad.profile")

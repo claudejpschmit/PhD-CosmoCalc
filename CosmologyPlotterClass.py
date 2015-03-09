@@ -97,51 +97,6 @@ class CosmoPlot(CosmoCalc):
         plt.savefig('x_HI.png')
         plt.show()
 
-    def plot_corr_Tb_no_distortions(self, l_min, l_max, k1, k2, z_low, z_high, step):
-        stepsize = (l_max - l_min) / float(step)
-        x = [l_min + float(i) * stepsize for i in range(0, step)]
-        y1 = [self.corr_Tb_no_distortions(l, k1, k2, z_low, z_high) for l in x]
-        plot1 = plt.loglog(x, y1, basex = 10, basey = 10, label = r'$\langle \delta T_{b,l}(k)\delta T_{b,l}(k\')\rangle$ vs $l$ for $k = 0.01$ and $k\' = 0.1$')
-        plt.legend(loc = 'upper left')
-        plt.title(r'$\langle \delta T_{b,l}(k)\delta T_{b,l}(k\')\rangle$ vs $l$' )
-        plt.xlabel(r'$l$')
-        plt.ylabel(r'$\langle \delta T_{b,l}(k)\delta T_{b,l}(k\')\rangle$')
-        plt.grid(True)
-        plt.ylim([10, 1000])
-        
-        plt.savefig('correlation.png')
-        plt.show()
-    
-    
-    def plot_Ml(self, l, k_fixed, k2_low, k2_high, z_low, z_high, steps):
-        stepsize = (k2_high - k2_low) / float(steps)
-        x = [k2_low + float(i) * stepsize for i in range(0, steps)]
-        y1 = [self.M(l, k_fixed, k2, z_low, z_high) for k2 in x]
-        plot1 = plt.loglog(x, y1, basex = 10, basey = 10, label = r'$M_l(k, kp)$')
-        plt.legend(loc = 'upper left')
-        plt.title(r'$M_l(k, kp)$ vs $kp$ for $l = 5$' )
-        plt.xlabel(r'$kp$')
-        plt.ylabel(r'$M_l(k, kp)$')
-        plt.grid(True)
-        
-        plt.savefig('M_l.png')
-        plt.show()
-
-    def plot_Ml_scipy(self, l, k_fixed, k2_low, k2_high, z_low, z_high, steps):
-        stepsize = (k2_high - k2_low) / float(steps)
-        x = [k2_low + float(i) * stepsize for i in range(0, steps)]
-        y1 = [self.M_scipy(l, k_fixed, k2, z_low, z_high) for k2 in x]
-        plot1 = plt.loglog(x, y1, basex = 10, basey = 10, label = r'$M_l(k, kp)$')
-        plt.legend(loc = 'upper left')
-        plt.title(r'$M_l(k, kp)$ vs $kp$ for $l = 5$' )
-        plt.xlabel(r'$kp$')
-        plt.ylabel(r'$M_l(k, kp)$')
-        plt.grid(True)
-        
-        plt.savefig('M_l.png')
-        plt.show()
-
-
     def plot_P(self, kmin, kmax, step, units_k = 'default', units_P = 'default'):
         stepsize = (kmax - kmin) / float(step)
         
@@ -206,6 +161,7 @@ class CosmoPlot(CosmoCalc):
         plt.ylabel(r'$j_l(x)$')
         plt.grid(True)
         plt.show()
+
     def plot_bessel_interp(self, l):
         stepsize = 0.01
         nmax = int((self.bessel_xmax-self.bessel_xmin)/stepsize)
