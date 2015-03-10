@@ -33,6 +33,7 @@ int main(int argc, char *argv[])
     output << lmin << " " << lmax << " " << xmin << " " << xmax << " " << xstep << endl; 
     for (int l = lmin; l <= lmax; ++l) {
         x = xmin;
+        cout << "Now writing bessel function for index l = " << l << endl;
         while (x <= xmax) {
             output << boost::math::sph_bessel(l,x) << " ";
             x += xstep;

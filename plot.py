@@ -25,7 +25,7 @@ parser.add_argument('--z', metavar = 'z',
 parser.add_argument('--T_CMB', metavar = 'T_CMB', 
         type = float, default = 2.75, help = 'CMB temperature')
 parser.add_argument('--bessel', metavar = 'bessel', 
-        type = str, default = 'bessel_table.dat', help = 'Filename of spherical bessel table')
+        type = str, default = 'bessel_table_old.dat', help = 'Filename of spherical bessel table')
 
 
 args = parser.parse_args()

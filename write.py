@@ -44,9 +44,9 @@ parser.add_argument('--z_low', metavar = 'z_low',
 parser.add_argument('--z_high', metavar = 'z_high', 
         type = float, default = 9, help = 'top bound for z integration')
 parser.add_argument('--method', metavar = 'method', 
-        type = int, default = 0, help = 'Integration method, either 0 for scipy or 1 for mp or 2 for simpson')
+        type = int, default = 2, help = 'Integration method, either 0 for scipy or 1 for mp or 2 for simpson')
 parser.add_argument('--bessel', metavar = 'bessel', 
-        type = str, default = 'bessel_table.dat', help = 'Filename of spherical bessel table')
+        type = str, default = 'bessel_table_old.dat', help = 'Filename of spherical bessel table')
 
 args = parser.parse_args()
 
