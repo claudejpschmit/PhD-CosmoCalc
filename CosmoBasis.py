@@ -6,6 +6,10 @@ import scipy.optimize as op
 import mpmath as mp
 import scipy.special as special
 import csv
+import struct
+import sys
+sys.path.append('/home/cjs213/Projects/PhD-CosmoCalc/camb4py-master/build/lib.linux-x86_64-2.7/camb4py/')
+import camb4py
 
 class CosmoBasis(object):
     # Initializer fixes constant parameters
@@ -70,8 +74,14 @@ class CosmoBasis(object):
         self.k_eq = 0.073 * self.O_M * self.h**2
         
         #this includes a matrix of all the values in the bessel function table
-        self.besseltable = self.read_bessel_table(besseltable)
+        self.besseltable = self.read_binary_bessel_table(besseltable)
 
+        #create CAMB object and results.
+        self.camb = camb4py.load('/home/cjs213/Projects/CAMB/camb', defaults='/home/cjs213/Projects/CAMB/params.ini')
+        self.camb_result_dict = self.camb()
+        self.Pk_table = self.camb_result_dict["transfer_matterpower"]
+         
+                
 #######################################################################
     # This function reads in a table of bessel function values and
     # retruns it as a matrix.
@@ -83,12 +93,31 @@ class CosmoBasis(object):
         
         self.bessel_lmin = int(bessel_table[0][0])
         self.bessel_lmax = int(bessel_table[0][1])
-        self.bessel_xmin = float(bessel_table[0][2])
-        self.bessel_xmax = float(bessel_table[0][3]) 
-        self.bessel_xstep = float(bessel_table[0][4]) 
+        self.bessel_xmax = float(bessel_table[0][2]) 
+        self.bessel_npts = float(bessel_table[0][3]) 
            
         bessel_table.pop(0)
         return bessel_table
+    
+    # This function reads in a table of bessel function values from bin file and
+    # retruns it as a matrix.
+    def read_binary_bessel_table(self, bt):
+
+        file = open(bt, 'rb')
+
+        self.bessel_lmin = struct.unpack('i', file.read(4))[0]
+        self.bessel_lmax = struct.unpack('i', file.read(4))[0]
+        self.bessel_xmax = struct.unpack('d', file.read(8))[0]
+        self.bessel_npts = struct.unpack('i', file.read(4))[0]
+
+        bessel_table = []
+        row = []
+        for l in range(0,self.bessel_lmax-1):
+            for n in range(0,self.bessel_npts-1):
+                row.append( struct.unpack('f', file.read(8))[0] )
+            bessel_table.append(row)
+        return bessel_table
+
 
     # Interpolation function for Spherical bessel functions.
     # This works as intended and is quite fast. Requires a precalculated 

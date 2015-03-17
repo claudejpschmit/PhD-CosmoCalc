@@ -374,7 +374,22 @@ class CosmoCalc(CosmoBasis):
         res = res * bracket**(-0.25)
         return res
     
-    
+    # Matter Power spectrum from camb
+    def camb_P_interp(self, k):
+        n = 0
+        kcamb = self.Pk_table[n][0]
+        while (kcamb < k):
+            n += 1
+            kcamb = self.Pk_table[n][0]
+        n -= 1
+        y0 = self.Pk_table[n][1]
+        y1 = self.Pk_table[n+1][1]
+        x0 = self.Pk_table[n][0]
+        x1 = self.Pk_table[n+1][0]
+
+        res = (y1-y0)*(k-x0)/(x1-x0) + y0
+        return res
+
 
     
     # for included rsd #

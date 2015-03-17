@@ -25,7 +25,10 @@ parser.add_argument('--z', metavar = 'z',
 parser.add_argument('--T_CMB', metavar = 'T_CMB', 
         type = float, default = 2.75, help = 'CMB temperature')
 parser.add_argument('--bessel', metavar = 'bessel', 
-        type = str, default = 'bessel_table_old.dat', help = 'Filename of spherical bessel table')
+        type = str, default = '../CAMB/JL_unformatted.dat', help = 'Filename of spherical bessel table')
+
+#parser.add_argument('--bessel', metavar = 'bessel', 
+#        type = str, default = 'bessel_table_l100.dat', help = 'Filename of spherical bessel table')
 
 
 args = parser.parse_args()
@@ -34,6 +37,8 @@ z = args.z
 ################# Output ################## 
 
 plotter = CosmoPlot(args.H_0, args.O_M, args.O_V, args.T_CMB, args.bessel)
+plotter.plot_bessel(5)
+#plotter.plot_P_camb(0.001, 10, 10000)
 #plotter.plot_distances()
 #plotter.plot_densities_rho(5000, 100)
 #plotter.plot_densities_Omega(10000, 100)

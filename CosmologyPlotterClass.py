@@ -150,9 +150,8 @@ class CosmoPlot(CosmoCalc):
         plt.show()
 
     def plot_bessel(self, l):
-        nmax = int((self.bessel_xmax - self.bessel_xmin)/self.bessel_xstep)
-        x = [self.bessel_xmin + n*self.bessel_xstep for n in range(0, nmax)]
-        y = [float(self.besseltable[l][n]) for n in range(0,nmax)]
+        x = [self.bessel_xmin + n*self.bessel_xstep for n in range(0, self.bessel_npts - 1)]
+        y = [float(self.besseltable[l][n]) for n in range(0, self.bessel_npts - 1)]
         plot1 = plt.plot(x, y, label = r'$j_l(x)$')
         
         plt.legend(loc = 'upper left')
@@ -179,3 +178,23 @@ class CosmoPlot(CosmoCalc):
         plt.ylabel(r'$j_l(x)$')
         plt.grid(True)
         plt.show()
+
+    def plot_P_camb(self, kmin, kmax, step):
+        stepsize = (kmax - kmin) / float(step)
+        x = [kmin + float(i) * stepsize for i in range(0, step)]
+        y1 = [self.camb_P_interp(k) for k in x]
+        plot1 = plt.scatter(x, y1, label = r'P(k)')
+        plt.xlabel(r'$k$ $(h \, Mpc^{-1})$')
+        plt.gca().set_xscale('log')
+        plt.gca().set_yscale('log')
+        plt.ylabel(r'$P(k)$ $(h^{-3} Mpc^3)$')
+
+        plt.legend(loc = 'upper right')
+        plt.title(r'Matter Power Spectrum' )
+        plt.grid(True)
+        plt.xlim([10**(-3), 10])
+        plt.ylim([1, 100000])
+        
+        plt.savefig('camb_powerspectrum.png')
+        plt.show()
+
