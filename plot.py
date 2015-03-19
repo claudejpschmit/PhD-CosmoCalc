@@ -15,20 +15,22 @@ parser.add_argument('--version', action='version',
         version='%(prog)s v0.1')
 parser.add_argument('--H_0', metavar = 'H_0', 
         type = float, default = 70.0,
-        help = 'Hubble Constant [km/s/Mpc]')
+        help = 'Hubble Constant [km/s/Mpc], default is H_0 = 70.0')
 parser.add_argument('--O_M', metavar = 'O_M', 
-        type = float, default = 0.3, help = 'Matter density')
+        type = float, default = 0.3, help = 'Matter density, default is O_M = 0.3')
 parser.add_argument('--O_V', metavar = 'O_V', 
-        type = float, default = 0.7, help = 'Vacuum density')
+        type = float, default = 0.7, help = 'Vacuum density, default is O_V = 0.7')
 parser.add_argument('--z', metavar = 'z', 
-        type = float, default = 3, help = 'redshift')
-parser.add_argument('--T_CMB', metavar = 'T_CMB', 
-        type = float, default = 2.75, help = 'CMB temperature')
-parser.add_argument('--bessel', metavar = 'bessel', 
-        type = str, default = '../CAMB/JL_unformatted.dat', help = 'Filename of spherical bessel table')
+        type = float, default = 3, help = 'redshift, default is z = 3')
+parser.add_argument('--z_low', metavar = 'z_low', 
+        type = float, default = 7, help = 'lower bound for z integration, default is z_low = 7')
+parser.add_argument('--z_high', metavar = 'z_high', 
+        type = float, default = 9, help = 'top bound for z integration, default is z_high = 9')
 
-#parser.add_argument('--bessel', metavar = 'bessel', 
-#        type = str, default = 'bessel_table_l100.dat', help = 'Filename of spherical bessel table')
+parser.add_argument('--T_CMB', metavar = 'T_CMB', 
+        type = float, default = 2.75, help = 'CMB temperature, default is T_CMB = 2.75')
+parser.add_argument('--bessel', metavar = 'bessel', 
+        type = str, default = 'Bessel/CAMB/JL_unformatted.bin', help = 'Filename of spherical bessel table, default is path = Bessel/CAMB/JL_unformatted.bin')
 
 
 args = parser.parse_args()
@@ -36,10 +38,13 @@ z = args.z
 
 ################# Output ################## 
 
-plotter = CosmoPlot(args.H_0, args.O_M, args.O_V, args.T_CMB, args.bessel)
-plotter.plot_bessel(5)
-#plotter.plot_P_camb(0.001, 10, 10000)
+plotter = CosmoPlot(args.H_0, args.O_M, args.O_V, args.z_low, args.z_high, args.T_CMB, args.bessel)
+print plotter.Pk_table
+plotter.plot_P_camb(0.001, 10, 10000)
+#plotter.plot_bessel_camb(2000,0,30000,0.1)
 #plotter.plot_distances()
+#plotter.plot_bessel(200)
+#plotter.plot_bessel(2000)
 #plotter.plot_densities_rho(5000, 100)
 #plotter.plot_densities_Omega(10000, 100)
 #plotter.plot_H(1000, 100)

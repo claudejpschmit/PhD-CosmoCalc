@@ -150,8 +150,23 @@ class CosmoPlot(CosmoCalc):
         plt.show()
 
     def plot_bessel(self, l):
+        
         x = [self.bessel_xmin + n*self.bessel_xstep for n in range(0, self.bessel_npts - 1)]
         y = [float(self.besseltable[l][n]) for n in range(0, self.bessel_npts - 1)]
+        plot1 = plt.plot(x, y, label = r'$j_l(x)$')
+        
+        plt.legend(loc = 'upper left')
+        plt.title(r'$j_l(x)$ vs $x$' )
+        plt.xlabel(r'$x$')
+        plt.ylabel(r'$j_l(x)$')
+        plt.grid(True)
+        plt.show()
+    
+    def plot_bessel_camb(self, l, xmin, xmax, stepsize):
+        
+        nsteps = int((xmax-xmin)/float(stepsize))
+        x = [xmin + n*stepsize for n in range(0, nsteps)]
+        y = [self.sphbess_camb(l,x1) for x1 in x]
         plot1 = plt.plot(x, y, label = r'$j_l(x)$')
         
         plt.legend(loc = 'upper left')
@@ -178,7 +193,7 @@ class CosmoPlot(CosmoCalc):
         plt.ylabel(r'$j_l(x)$')
         plt.grid(True)
         plt.show()
-
+    
     def plot_P_camb(self, kmin, kmax, step):
         stepsize = (kmax - kmin) / float(step)
         x = [kmin + float(i) * stepsize for i in range(0, step)]
@@ -197,4 +212,3 @@ class CosmoPlot(CosmoCalc):
         
         plt.savefig('camb_powerspectrum.png')
         plt.show()
-

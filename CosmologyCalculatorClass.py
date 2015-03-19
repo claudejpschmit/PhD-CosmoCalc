@@ -18,7 +18,32 @@ import mpmath as mp
 #from skmonaco import mcquad
 
 class CosmoCalc(CosmoBasis):
-    
+   
+    def __init__(self, H_0, O_M, O_V, z_low_integration, z_high_integration, T_CMB, besseltable):
+        CosmoBasis.__init__(self, H_0, O_M, O_V, z_low_integration, z_high_integration, T_CMB, besseltable)
+
+        # Creating a list of Comoving distances between z_low & z_high to speed up M_l integration
+        # Also creating list of growth functions
+        self.zmin_Ml = z_low_integration
+        self.zmax_Ml = z_high_integration
+        self.nsteps_Ml = 100
+        self.stepsize_Ml = (self.zmax_Ml - self.zmin_Ml)/float(self.nsteps_Ml)
+
+        self.r_Ml = []
+        self.growth_Ml = []
+        for n in range(0,self.nsteps_Ml + 1):
+            z = self.zmin_Ml + n * self.stepsize_Ml
+            self.r_Ml.append(self.D_C(z))
+            integral = integrate.quad(lambda x: (1+x) / self.E(x)**3, z, np.inf)
+            self.growth_Ml.append(integral[0])
+
+        B = integrate.quad(lambda x: (1+x) / self.E(x)**3, 0, np.inf) 
+        self.prefactor_Ml = 2*self.b_bias*self.c/(B[0]*pi*self.H_0*1000)
+            
+        
+        # Let's user know that initialisation is done
+        print "CosmoCalc initialized"
+
     # Hubble Time [s * Mpc/km]: 
     #   t_H = 1/H_0
     def hubble_time(self):
@@ -190,12 +215,12 @@ class CosmoCalc(CosmoBasis):
     # between redshifts z1 & z2.
     # use eg. z1 = 6 & z2 = 10 
     # This has units [MPc^6 K^2]
-    def corr_Tb(self, l, k1, k2, z_low, z_high, k_low, k_high):
+    def corr_Tb(self, l, k1, k2, k_low, k_high):
         #TODO: figure out integration limits kkk
         integral = self.integrate_simps(lambda k: k**2 *\
-                    self.P_delta(k, units_k = 'mpc-1', units_P = 'mpc3') *\
-                    self.M(l, k1, k, z_low, z_high) *\
-                    self.M(l, k2, k, z_low, z_high), k_low, k_high, 1000)
+                    self.camb_P_interp(k) *\
+                    self.M(l, k1, k) *\
+                    self.M(l, k2, k), k_low, k_high, 1000)
         return integral
     
     ############### Then, we include redshift space distortions #########
@@ -204,33 +229,35 @@ class CosmoCalc(CosmoBasis):
     # between redshifts z1 & z2.
     # use eg. z1 = 6 & z2 = 10 
     # This has units [MPc^6 K^2]
-    def corr_Tb_rsd(self, l, k1, k2, z_low, z_high, k_low, k_high):
+    def corr_Tb_rsd(self, l, k1, k2, k_low, k_high):
         def integrand(k):
             res = k**2 *  self.P_delta(k, units_k = 'mpc-1', units_P = 'mpc3') *\
-                   (self.M(l, k1, k, z_low, z_high) * self.M(l, k2, k, z_low, z_high) +\
-                   self.bias * self.beta * (self.M(l, k1, k, z_low, z_high) * self.N_bar(l, k2, k, z_low, z_high) + self.N_bar(l, k1, k, z_low, z_high) * self.M(l, k2, k, z_low, z_high)) +\
-                   self.bias**2 * self.beta**2 * self.N_bar(l, k1, k, z_low, z_high) * self.N_bar(l, k2, k, z_low, z_high))
+                   (self.M(l, k1, k) * self.M(l, k2, k) +\
+                   self.bias * self.beta * (self.M(l, k1, k) * self.N_bar(l, k2, k) + self.N_bar(l, k1, k) * self.M(l, k2, k)) +\
+                   self.bias**2 * self.beta**2 * self.N_bar(l, k1, k) * self.N_bar(l, k2, k))
             return res
 
         integral = self.integrate_simps(lambda k: integrand(k), k_low, k_high, 1000)
         return integral
 
     ########################################################################
-    # this function uses simple Simpson integration and interpolates spherical Bessels.
+    # this function uses simple Simpson integration and gets spherical Bessels from CAMB.
 
-    def M(self, l, k1, k2, z_low, z_high):
+    def M(self, l, k1, k2):
         def integrand(z):
-            r = self.D_C(z)
-            integral = integrate.quad(lambda x: (1+x) / self.E(x)**3, z, np.inf)
-
-            return r**2 * self.delta_Tb_bar(r) * self.sphbess_interp(l,k1*r) *\
-                    self.sphbess_interp(l,k2*r)  * integral[0]
+            n_old = (z - self.zmin_Ml)/self.stepsize_Ml
+            if abs(n_old-int(n_old)) > 0.5:
+                n = int(n_old)+1
+            else:
+                n = int(n_old)
+            r = self.r_Ml[n]
+            growth = self.growth_Ml[n]
+            return r**2 * self.delta_Tb_bar(r) * self.sphbess_camb(l,k1*r) *\
+                    self.sphbess_camb(l,k2*r)  * growth
         
-        integral = self.integrate_simps(lambda z: integrand(z), z_low, z_high, 100)
+        integral = self.integrate_simps(lambda z: integrand(z), self.zmin_Ml, self.zmax_Ml, self.nsteps_Ml)
 
-        B = integrate.quad(lambda x: (1+x) / self.E(x)**3, 0, np.inf) 
-        prefactor = 2*self.b_bias*self.c/(B[0]*pi*self.H_0*1000)
-        res = prefactor * integral  
+        res = self.prefactor_Ml * integral  
         return res
 
 
@@ -245,7 +272,7 @@ class CosmoCalc(CosmoBasis):
             r = self.D_C(z)
             integral = integrate.quad(lambda x: (1+x) / self.E(x)**3, z, np.inf)
 
-            return r**2 * self.delta_Tb_bar(r) * self.sphbess_interp(l,k1*r) * self.sphbess_interp(l,k2*r)* integral[0]
+            return r**2 * self.delta_Tb_bar(r) * self.sphbess_camb(l,k1*r) * self.sphbess_camb(l,k2*r)* integral[0]
         
         integral = integrate.quad(lambda z: integrand(z), z_low, z_high)
 
@@ -264,7 +291,7 @@ class CosmoCalc(CosmoBasis):
             r = self.D_C(z)
             integral = integrate.quad(lambda x: (1+x) / self.E(x)**3, z, np.inf)
 
-            return r**2 * self.delta_Tb_bar(r) * self.sphbess_interp(l,k1*r) * self.sphbess_interp(l,k2*r)* integral[0] 
+            return r**2 * self.delta_Tb_bar(r) * self.sphbess_camb(l,k1*r) * self.sphbess_camb(l,k2*r)* integral[0] 
 
         integral = mp.quad(lambda z: integrand(z), [z_low, z_high])
 
@@ -282,7 +309,7 @@ class CosmoCalc(CosmoBasis):
         def integrand(z):
             r = self.D_C(z)
             
-            return r**2 * self.delta_Tb_bar(r) * self.sphbess_interp(l,k1*r) * self.sphbess_interp(l,k2*r) / self.E(z)         
+            return r**2 * self.delta_Tb_bar(r) * self.sphbess_camb(l,k1*r) * self.sphbess_camb(l,k2*r) / self.E(z)         
         
         integral = integrate.romberg(lambda z: integrand(z), z_low, z_high, divmax = 30)
 
@@ -299,7 +326,7 @@ class CosmoCalc(CosmoBasis):
     def M_mp_ng(self, l, k1, k2, z_low, z_high):
         def integrand(z):
             r = self.D_C(z)
-            return r**2 * self.delta_Tb_bar(r) * self.sphbess_interp(l,k1*r) * self.sphbess_interp(l,k2*r) / self.E(z)  
+            return r**2 * self.delta_Tb_bar(r) * self.sphbess_camb(l,k1*r) * self.sphbess_camb(l,k2*r) / self.E(z)  
 
         integral = mp.quad(lambda z: integrand(z), [z_low, z_high])
         
@@ -375,6 +402,7 @@ class CosmoCalc(CosmoBasis):
         return res
     
     # Matter Power spectrum from camb
+    # TODO: is there a better way to do this?
     def camb_P_interp(self, k):
         n = 0
         kcamb = self.Pk_table[n][0]
@@ -386,17 +414,15 @@ class CosmoCalc(CosmoBasis):
         y1 = self.Pk_table[n+1][1]
         x0 = self.Pk_table[n][0]
         x1 = self.Pk_table[n+1][0]
-
+        
         res = (y1-y0)*(k-x0)/(x1-x0) + y0
         return res
-
-
     
     # for included rsd #
     ######### Separable growth
     def I(self, l1, l2, k1, k2, z, r):
         integral = integrate.quad(lambda x: (1+x) / self.E(x)**3, z, np.inf)
-        res = self.delta_Tb_bar(r) * self.sphbess_interp(l1,k1*r) * self.sphbess_interp(l2,k2*r) * integral[0]
+        res = self.delta_Tb_bar(r) * self.sphbess_camb(l1,k1*r) * self.sphbess_camb(l2,k2*r) * integral[0]
 
         
         return prefactor * res
