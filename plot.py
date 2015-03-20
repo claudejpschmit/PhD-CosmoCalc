@@ -39,7 +39,6 @@ z = args.z
 ################# Output ################## 
 
 plotter = CosmoPlot(args.H_0, args.O_M, args.O_V, args.z_low, args.z_high, args.T_CMB, args.bessel)
-print plotter.Pk_table
 plotter.plot_P_camb(0.001, 10, 10000)
 #plotter.plot_bessel_camb(2000,0,30000,0.1)
 #plotter.plot_distances()
