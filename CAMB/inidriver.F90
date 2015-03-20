@@ -20,7 +20,7 @@
     implicit none
 
     Type(CAMBparams) P
-
+   
     character(LEN=Ini_max_string_len) numstr, VectorFileName, &
     InputFile, ScalarFileName, TensorFileName, TotalFileName, LensedFileName,&
     LensedTotFileName, LensPotentialFileName,ScalarCovFileName
@@ -32,8 +32,76 @@
 #ifdef WRITE_FITS
     character(LEN=Ini_max_string_len) FITSfilename
 #endif
-
+    
     logical bad
+
+    real*8 		        :: testjl,cs_x,cs_xmax,cs_xmin
+    integer*4 		    :: cs_lmax,cs_npts,cs_l,cs_n,cs_lmin
+    real*8, allocatable :: jl_array(:,:)
+    real*4, allocatable :: jl_array_flt(:,:)
+    real*4              :: cs_xmax_flt,cs_lmax_flt,cs_npts_flt,cs_lmin_flt,cs_xmin_flt
+
+    
+
+    print *,'Enter lmax,xmax,nxsteps:'
+    read(5,*)cs_lmax,cs_xmax,cs_npts
+    print *, cs_lmax,cs_xmax,cs_npts
+
+!   test values
+!    cs_lmax = 10
+!    cs_xmax = 100.0d0
+!    cs_npts = 50
+    cs_lmin = 0
+    cs_xmin = 0.0d0
+
+    allocate(jl_array(cs_lmax+1,cs_npts+1))
+    allocate(jl_array_flt(cs_lmax+1,cs_npts+1))
+    
+    cs_xmax_flt = real(cs_xmax)
+    cs_lmax_flt = real(cs_lmax)
+    cs_npts_flt = real(cs_npts)
+    cs_lmin_flt = real(cs_lmin)
+    cs_xmin_flt = real(cs_xmin)
+    
+    do cs_l=cs_lmin,cs_lmax
+       do cs_n=0,cs_npts
+          cs_x = dble(cs_n)*cs_xmax/dble(cs_npts)
+          call BJL(cs_l,cs_x,jl_array(cs_l+1,cs_n+1))
+          jl_array_flt(cs_l+1,cs_n+1)=real(jl_array(cs_l+1,cs_n+1))
+       enddo
+       print *,'CAMB has generated j_',cs_l
+    enddo
+    print *,'>>>>>>>>>>>>>>> jl_array object created'
+! Write unformatted file:
+    open(unit=22,form='unformatted',file='JL_unformatted.bin')
+    print *,'It likes the open line'
+
+! Need to write all data with the same type in order to read it in successfully.
+    write(22)cs_lmin_flt,cs_lmax_flt,cs_xmin_flt,cs_xmax_flt,cs_npts_flt
+    print *,'It likes the first write line'
+
+    write(22)jl_array_flt
+    print *,'It likes writing the array'
+
+
+    close(22)
+    print *,'It likes closing the file'
+
+    ! Write readable file:
+    ! Uncomment this section if necessary
+    !open(unit=33,form='formatted',file='JL_formatted.dat')
+    !write(33,*)cs_lmin,cs_lmax,cs_xmin,cs_xmax_flt,cs_npts
+    !do cs_l=cs_lmin,cs_lmax
+	!    do cs_n=0,cs_npts
+    !        write(33,'(f12.5,X)', advance='no')jl_array_flt(cs_l+1,cs_n+1)
+    !    enddo
+    !    write(33, *)''
+    !enddo
+    !close(33)
+
+    !    
+
+
 
     InputFile = ''
     if (GetParamCount() /= 0)  InputFile = GetParam(1)
