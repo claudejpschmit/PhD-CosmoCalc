@@ -77,7 +77,7 @@ class CosmoBasis(object):
         #self.besseltable = self.read_bessel_table(besseltable)
 
         #create CAMB object and results.
-        self.camb = camb4py.load('/home/cjs213/Projects/CAMB/camb', defaults='/home/cjs213/Projects/CAMB/params.ini')
+        self.camb = camb4py.load('CAMB/camb', defaults='CAMB/params.ini')
         self.camb_result_dict = self.camb()
         self.Pk_table = self.camb_result_dict["transfer_matterpower"]
          
