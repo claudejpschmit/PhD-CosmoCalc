@@ -47,7 +47,7 @@
 !    read(5,*)cs_lmax,cs_xmax,cs_npts
 !    print *, cs_lmax,cs_xmax,cs_npts
 
-   test values
+!   test values
     cs_lmax = 10
     cs_xmax = 100.0d0
     cs_npts = 50
