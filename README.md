@@ -30,7 +30,7 @@ The test call of camb is important as it writes a binary file of spherical besse
 cd back to working directory, then:
 
 ```sh
-$ cd Bessel/Bessel_from_CAMB/
+$ cd Bessel/Bessels_from_CAMB/
 $ f2py -c -m bessels test_bessel.F90
 ```
 
@@ -46,6 +46,15 @@ $ python setup.py build --no-builtin
 ```
 
 This generates a build/ folder which is used by the CosmoCalculator.
+
+- Alternative Setup
+
+If you're convinced each step should be working you might find it easier to use the setup script.
+
+```sh
+$ ./setup_script.sh
+```
+
 
 Usage
 -----
