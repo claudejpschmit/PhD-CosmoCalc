@@ -37,7 +37,7 @@ parser.add_argument('--T_CMB', metavar = 'T_CMB',
 parser.add_argument('--p', metavar = 'profiling', 
         type = float, default = False, help = 'Turns on (1) or off (0) program profiling')
 parser.add_argument('--bessel', metavar = 'bessel', 
-        type = str, default = 'Bessel/CAMB/JL_unformatted.bin', help = 'Filename of spherical bessel table, default is path = Bessel/CAMB/JL_unformatted.bin')
+        type = str, default = 'CAMB/JL_unformatted.bin', help = 'Filename of spherical bessel table, default is path = CAMB/JL_unformatted.bin')
 
 args = parser.parse_args()
 z = args.z

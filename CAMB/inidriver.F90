@@ -41,16 +41,16 @@
     real*4, allocatable :: jl_array_flt(:,:)
     real*4              :: cs_xmax_flt,cs_lmax_flt,cs_npts_flt,cs_lmin_flt,cs_xmin_flt
 
-    
+! Either uncomment this & comment first 3 test values or change test values as necessary  
 
-    print *,'Enter lmax,xmax,nxsteps:'
-    read(5,*)cs_lmax,cs_xmax,cs_npts
-    print *, cs_lmax,cs_xmax,cs_npts
+!    print *,'Enter lmax,xmax,nxsteps:'
+!    read(5,*)cs_lmax,cs_xmax,cs_npts
+!    print *, cs_lmax,cs_xmax,cs_npts
 
-!   test values
-!    cs_lmax = 10
-!    cs_xmax = 100.0d0
-!    cs_npts = 50
+   test values
+    cs_lmax = 10
+    cs_xmax = 100.0d0
+    cs_npts = 50
     cs_lmin = 0
     cs_xmin = 0.0d0
 

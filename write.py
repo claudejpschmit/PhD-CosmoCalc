@@ -46,7 +46,7 @@ parser.add_argument('--z_high', metavar = 'z_high',
 parser.add_argument('--method', metavar = 'method', 
         type = int, default = 2, help = 'Integration method, either 0 for scipy or 1 for mp or 2 for simpson, default is method = 2')
 parser.add_argument('--bessel', metavar = 'bessel', 
-        type = str, default = 'Bessel/CAMB/JL_unformatted.bin', help = 'Filename of spherical bessel table, default is path = Bessel/CAMB/JL_unformatted.bin')
+        type = str, default = 'CAMB/JL_unformatted.bin', help = 'Filename of spherical bessel table, default is path = CAMB/JL_unformatted.bin')
 
 args = parser.parse_args()
 

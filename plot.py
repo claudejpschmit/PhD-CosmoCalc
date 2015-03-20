@@ -30,7 +30,7 @@ parser.add_argument('--z_high', metavar = 'z_high',
 parser.add_argument('--T_CMB', metavar = 'T_CMB', 
         type = float, default = 2.75, help = 'CMB temperature, default is T_CMB = 2.75')
 parser.add_argument('--bessel', metavar = 'bessel', 
-        type = str, default = 'Bessel/CAMB/JL_unformatted.bin', help = 'Filename of spherical bessel table, default is path = Bessel/CAMB/JL_unformatted.bin')
+        type = str, default = 'CAMB/JL_unformatted.bin', help = 'Filename of spherical bessel table, default is path = CAMB/JL_unformatted.bin')
 
 
 args = parser.parse_args()
