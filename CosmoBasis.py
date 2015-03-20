@@ -3,10 +3,10 @@ from math import *
 import scipy.integrate as integrate
 import csv
 import sys
-sys.path.append('/home/cjs213/Projects/PhD-CosmoCalc/camb4py-master/build/lib.linux-x86_64-2.7/camb4py/')
+sys.path.append('camb4py-master/build/lib.linux-x86_64-2.7/camb4py/')
 import camb4py
 from fortranfile import FortranFile
-sys.path.append('/home/cjs213/Projects/PhD-CosmoCalc/Bessel/Bessels_from_CAMB/')
+sys.path.append('Bessel/Bessels_from_CAMB/')
 import bessels
 
 class CosmoBasis(object):
