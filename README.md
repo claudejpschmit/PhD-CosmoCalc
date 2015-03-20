@@ -22,6 +22,9 @@ $ make
 $ ./camb params.ini
 ```
 
+The Makefile for CAMB may have to be eddited depending on the Fortran compiler present on your machine.
+The test call of camb is important as it writes a binary file of spherical bessels read in by the CosmoCalculator.
+
 - Setup for Bessel function wrapper
 
 cd back to working directory, then:
@@ -40,7 +43,6 @@ cd back to working directory, then:
 ```sh
 $ cd camb4py/
 $ python setup.py build --no-builtin
-$ python setup.py install
 ```
 
 This generates a build/ folder which is used by the CosmoCalculator.
@@ -51,8 +53,9 @@ Usage
 If the setup has been correct you should be able to cd back to the working directory and call
 
 ```sh
-$ python calc.py -h
-$ python plot.py -h
-$ python writer.py -h
+$ python calc.py 
+$ python plot.py 
+$ python writer.py 
 ```
 
+add -h to any of the above to gain more information 
