@@ -9,6 +9,8 @@ Setup
 Download and unzip into a working directory. Then cd into working directory.
 The setup for this program requires the setup for 3 different dependencies.
 
+First off it is important to install f2py on your machine! Google -> Download -> install.
+
 - Setup for CAMB: 
 
 ```sh
