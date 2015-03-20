@@ -41,7 +41,7 @@ This creates the object bessels.so which is called by the CosmoCalculator.
 cd back to working directory, then:
 
 ```sh
-$ cd camb4py/
+$ cd camb4py-master/
 $ python setup.py build --no-builtin
 ```
 
