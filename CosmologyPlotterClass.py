@@ -5,7 +5,6 @@
 from CosmologyCalculatorClass import CosmoCalc
 import matplotlib.pyplot as plt
 import numpy as np
-from decimal import Decimal
 from math import *
 
 class CosmoPlot(CosmoCalc):
@@ -175,28 +174,10 @@ class CosmoPlot(CosmoCalc):
         plt.ylabel(r'$j_l(x)$')
         plt.grid(True)
         plt.show()
-
-    def plot_bessel_interp(self, l):
-        stepsize = 0.01
-        nmax = int((self.bessel_xmax-self.bessel_xmin)/stepsize)
-        x = [self.bessel_xmin + n*stepsize for n in range(0, nmax)]
-        y = [self.sphbess_interp(l, xi) for xi in x]
-        plot1 = plt.plot(x, y, label = r'$j_l(x)$')
-        nmax = int((self.bessel_xmax - self.bessel_xmin)/self.bessel_xstep)
-        x1 = [self.bessel_xmin + n*self.bessel_xstep for n in range(0, nmax-1)]
-        y1 = [float(self.besseltable[l][n]) for n in range(0,nmax-1)]
-        plot2 = plt.plot(x1, y1, label = r'$j_l(x)$')
-
-        plt.legend(loc = 'upper left')
-        plt.title(r'$j_l(x)$ vs $x$' )
-        plt.xlabel(r'$x$')
-        plt.ylabel(r'$j_l(x)$')
-        plt.grid(True)
-        plt.show()
     
-    def plot_P_camb(self, kmin, kmax, step):
-        stepsize = (kmax - kmin) / float(step)
-        x = [kmin + float(i) * stepsize for i in range(0, step)]
+    def plot_P_camb(self, kmin, kmax, nsteps):
+        stepsize = (kmax - kmin) / float(nsteps)
+        x = [kmin + float(i) * stepsize for i in range(0, nsteps)]
         y1 = [self.camb_P_interp(k) for k in x]
         plot1 = plt.scatter(x, y1, label = r'P(k)')
         plt.xlabel(r'$k$ $(h \, Mpc^{-1})$')

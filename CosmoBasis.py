@@ -1,12 +1,7 @@
 
 from math import *
 import scipy.integrate as integrate
-import numpy as np
-import scipy.optimize as op
-import mpmath as mp
-import scipy.special as special
 import csv
-import struct
 import sys
 sys.path.append('/home/cjs213/Projects/PhD-CosmoCalc/camb4py-master/build/lib.linux-x86_64-2.7/camb4py/')
 import camb4py
@@ -78,6 +73,8 @@ class CosmoBasis(object):
         
         #this includes a matrix of all the values in the bessel function table
         self.besseltable = self.read_binary_bessel_table(besseltable)
+        #uncomment to use text file input instead of fortran binary.
+        #self.besseltable = self.read_bessel_table(besseltable)
 
         #create CAMB object and results.
         self.camb = camb4py.load('/home/cjs213/Projects/CAMB/camb', defaults='/home/cjs213/Projects/CAMB/params.ini')
@@ -128,7 +125,8 @@ class CosmoBasis(object):
             bessel_table.append(row)
             row = []
         return bessel_table
-
+    
+    # This function uses the subroutine bjl from CAMB to efficiently compute spherical bessel functions. 
     def sphbess_camb(self, l, x):
         return bessels.bjl(l, x)
 
@@ -142,29 +140,6 @@ class CosmoBasis(object):
 
         res = (y1-y0)*(n-int(n)) + y0
         return res
-    
-    # Helper function to compute spherical bessel functions
-    def sphbess(self, l, x):
-        if x > 10*l*l:
-            bess = 1/x * sin(x - l*pi/2)
-        else:
-            bess = special.sph_jn(l,x)[0][l]
-            if isnan(bess):
-                bess = 1/x * sin(x - l*pi/2)
-        return bess
-    def new_sphbess(self, l, x):
-        bess = special.sph_jn(l,x)[0][l]
-        if isnan(bess):
-            bess = 1/x * mp.sin(x - l*pi/2)
-        return bess
-
-    # Helper function to compute spherical bessel functions fast
-    def fsphbess(self, n, x):
-        return sqrt(pi/(2*x)) * mp.fp.besselj(n+0.5, x)
-
-    # Helper function to compute spherical bessel functions fast
-    def mp_sphbess(self, n, x):
-        return sqrt(pi/(2*x)) * mp.fp.besselj(n+0.5, x)
 
     # Helper function, denominator for various integrals
     # E(z) = H(z)/H_0 
@@ -176,10 +151,7 @@ class CosmoBasis(object):
     def Z(self, z):
         integral = integrate.quad(lambda x: 1.0/self.E(x), 0, z)
         return integral[0]
-    def Z_opt(self, z):
-        integral = mp.fp.quad(lambda x: 1.0/self.E(x), [0, z])
-        return integral
-
+    
     # Curvature term in the metric:
     #   sinh x, x or sin x 
     def S_k(self, x):

@@ -14,8 +14,6 @@ from CosmoBasis import CosmoBasis
 from math import *
 import scipy.integrate as integrate
 import numpy as np
-import mpmath as mp
-#from skmonaco import mcquad
 
 class CosmoCalc(CosmoBasis):
    
@@ -26,7 +24,7 @@ class CosmoCalc(CosmoBasis):
         # Also creating list of growth functions
         self.zmin_Ml = z_low_integration
         self.zmax_Ml = z_high_integration
-        self.nsteps_Ml = 100
+        self.nsteps_Ml = 1000
         self.stepsize_Ml = (self.zmax_Ml - self.zmin_Ml)/float(self.nsteps_Ml)
 
         self.r_Ml = []
@@ -44,6 +42,8 @@ class CosmoCalc(CosmoBasis):
         # Let's user know that initialisation is done
         print "CosmoCalc initialized"
 
+
+#############################################################################
     # Hubble Time [s * Mpc/km]: 
     #   t_H = 1/H_0
     def hubble_time(self):
@@ -262,81 +262,6 @@ class CosmoCalc(CosmoBasis):
 
 
     #########################################################################
-
-
-    ########################################################################
-    # this function uses scipy integration
-
-    def M_scipy(self, l, k1, k2, z_low, z_high):
-        def integrand(z):
-            r = self.D_C(z)
-            integral = integrate.quad(lambda x: (1+x) / self.E(x)**3, z, np.inf)
-
-            return r**2 * self.delta_Tb_bar(r) * self.sphbess_camb(l,k1*r) * self.sphbess_camb(l,k2*r)* integral[0]
-        
-        integral = integrate.quad(lambda z: integrand(z), z_low, z_high)
-
-        B = integrate.quad(lambda x: (1+x) / self.E(x)**3, 0, np.inf) 
-        prefactor = 2*self.b_bias*self.c/(B[0] *pi*self.H_0*1000)
-        res = prefactor * integral[0]  
-        return res
-
-
-    #########################################################################
-    #########################################################################
-    # this function uses mpmath integration
-
-    def M_mp(self, l, k1, k2, z_low, z_high):
-        def integrand(z):
-            r = self.D_C(z)
-            integral = integrate.quad(lambda x: (1+x) / self.E(x)**3, z, np.inf)
-
-            return r**2 * self.delta_Tb_bar(r) * self.sphbess_camb(l,k1*r) * self.sphbess_camb(l,k2*r)* integral[0] 
-
-        integral = mp.quad(lambda z: integrand(z), [z_low, z_high])
-
-        B = integrate.quad(lambda x: (1+x) / self.E(x)**3, 0, np.inf) 
-        prefactor = 2*self.b_bias*self.c/(B[0] *pi*self.H_0*1000)
-        res = prefactor * integral  
-        return res
-
-
-    #########################################################################
-    ########################################################################
-    # this function uses scipy integration and no growth function
-
-    def M_scipy_ng(self, l, k1, k2, z_low, z_high):
-        def integrand(z):
-            r = self.D_C(z)
-            
-            return r**2 * self.delta_Tb_bar(r) * self.sphbess_camb(l,k1*r) * self.sphbess_camb(l,k2*r) / self.E(z)         
-        
-        integral = integrate.romberg(lambda z: integrand(z), z_low, z_high, divmax = 30)
-
-        
-        prefactor = 2*self.b_bias*self.c/(pi*self.H_0*1000)
-        res = prefactor * integral  
-        return res
-
-
-    #########################################################################
-    #########################################################################
-    # this function uses mpmath integration and no growth function
-
-    def M_mp_ng(self, l, k1, k2, z_low, z_high):
-        def integrand(z):
-            r = self.D_C(z)
-            return r**2 * self.delta_Tb_bar(r) * self.sphbess_camb(l,k1*r) * self.sphbess_camb(l,k2*r) / self.E(z)  
-
-        integral = mp.quad(lambda z: integrand(z), [z_low, z_high])
-        
-        prefactor = 2*self.b_bias*self.c/(pi*self.H_0*1000)
-        res = prefactor * integral  
-        return res
-
-
-    #########################################################################
-
     # Mean Brightness Temperature fluctuations at distance r (comoving) [K]
     def delta_Tb_bar(self, r):
         #TODO: find sensible constant
