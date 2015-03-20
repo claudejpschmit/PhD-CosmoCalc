@@ -12,7 +12,7 @@ FISHER=
 #F90C     = ifort
 #FFLAGS = -openmp -fast -W0 -WB -fpp2 -vec_report0
 ## This is flag is passed to the Fortran compiler allowing it to link C++ if required (not usually):
-F90CRLINK = -cxxlib
+#F90CRLINK = -cxxlib
 ifneq ($(FISHER),)
 FFLAGS += -mkl
 endif
