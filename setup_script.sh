@@ -6,6 +6,10 @@ make
 # Running basic test for CAMB
 ./camb params.ini
 
+# Installing F2Py
+cd ../F2Py/
+python setup.py install
+
 # Building Spherical Bessel function
 cd ../Bessel/Bessels_from_CAMB/
 f2py -c -m bessels test_bessel.F90
