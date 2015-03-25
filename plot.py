@@ -39,8 +39,24 @@ z = args.z
 ################# Output ################## 
 
 plotter = CosmoPlot(args.H_0, args.O_M, args.O_V, args.z_low, args.z_high, args.T_CMB, args.bessel)
+
+plotter.plot_bessel_camb2(0,0,3000,0.1)
+plotter.plot_bessel_camb(0,0,3000,0.1)
+'''
 plotter.plot_P_camb(0.001, 10, 10000)
-#plotter.plot_bessel_camb(2000,0,30000,0.1)
+plotter.plot_bessel_camb_diff(0,0,30000,0.1)
+plotter.plot_bessel_camb_diff(1,0,30000,0.1)
+plotter.plot_bessel_camb_diff(2,0,30000,0.1)
+plotter.plot_bessel_camb_diff(3,0,30000,0.1)
+plotter.plot_bessel_camb_diff(4,0,30000,0.1)
+plotter.plot_bessel_camb_diff(5,0,30000,0.1)
+plotter.plot_bessel_camb_diff(6,0,30000,0.1)
+plotter.plot_bessel_camb_diff(7,0,30000,0.1)
+plotter.plot_bessel_camb_diff(10,0,30000,0.1)
+plotter.plot_bessel_camb_diff(20,0,30000,0.1)
+plotter.plot_bessel_camb_diff(100,0,30000,0.1)
+plotter.plot_bessel_camb_diff(1000,0,30000,0.1)
+'''
 #plotter.plot_distances()
 #plotter.plot_bessel(200)
 #plotter.plot_bessel(2000)
