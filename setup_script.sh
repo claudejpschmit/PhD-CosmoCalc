@@ -12,7 +12,7 @@ python setup.py install
 
 # Building Spherical Bessel function
 cd ../Bessel/Bessels_from_CAMB/
-f2py -c -m bessels test_bessel.F90
+f2py -c bessels test_bessel.F90
 
 # Building camb4py wrapper
 cd ../../camb4py-master/

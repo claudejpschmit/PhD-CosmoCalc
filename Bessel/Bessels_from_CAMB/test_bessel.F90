@@ -21,7 +21,6 @@
         real(dl) sx,sx2
         real(dl) cotb,cot3b,cot6b,secb,sec2b
         real(dl) trigarg,expterm,L3
-
         IF(L.LT.0)THEN
             write(*,*) 'Can not evaluate Spherical Bessel Function with index l<0'
             STOP

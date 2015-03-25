@@ -4,9 +4,9 @@
 python module bessels ! in 
     interface  ! in :bessels
         subroutine bjl(l,x,jl) ! in :bessels:test_bessel.F90
-            integer intent(in) :: l
-            real(kind=8) intent(in) :: x
-            real(kind=8) intent(out) :: jl
+            integer,intent(in):: l
+            real(kind=8),intent(in):: x
+            real(kind=8),intent(out):: jl
         end subroutine bjl
     end interface 
 end python module bessels
