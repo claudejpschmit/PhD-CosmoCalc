@@ -74,7 +74,7 @@ if not args.p:
     
     print "#################################"
     
-    #print calc.corr_Tb(10, 0.1, 0.2, 0.01, 1)
+    print calc.corr_Tb(10, 0.1, 0.2, 0.01, 1)
     #print calc.M_mp(3, 0.01, 1.0, 7, 9)
     #print calc.D_C(args.z_low)
     #print calc.D_C(args.z_high)
@@ -83,7 +83,6 @@ if not args.p:
 
 else:
     profile.run('calc.corr_Tb(10, 0.1, 0.2, 0.01, 1)', filename="Tb.profile")
-
     #profile.run('calc.M(3, 0.1, 1.0, 7, 9)', filename="interpol.profile")
     #profile.run('calc.M_mp(3, 0.1, 1.0, 7, 9)', filename="mpquad.profile")
     #profile.run('calc.M_scipy(3, 0.1, 1.0, 7, 9)', filename="scipyquad.profile")

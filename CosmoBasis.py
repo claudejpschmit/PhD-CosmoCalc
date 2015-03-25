@@ -7,8 +7,8 @@ sys.path.append('camb4py-master/build/lib.linux-x86_64-2.7/camb4py/')
 import camb4py
 from fortranfile import FortranFile
 sys.path.append('Bessel/Bessels_from_CAMB/')
-import bessels
-import bessel
+import bessels # This is the fortran version
+import bessel # This is the python version
 
 class CosmoBasis(object):
     # Initializer fixes constant parameters
@@ -128,11 +128,11 @@ class CosmoBasis(object):
         return bessel_table
     
     # This function uses the subroutine bjl from CAMB to efficiently compute spherical bessel functions. 
+    # If for some reason f2py is not working, then comment first line here and uncomment second.
     def sphbess_camb(self, l, x):
-        jl = 0
-        return bessels.bjl(l, x, jl)
-    def sphbess_camb2(self, l, x):
-        return bessel.bjl(l, x)
+        return bessels.bjl(l, x)
+        #return bessel.bjl(l, x)
+
     # Interpolation function for Spherical bessel functions.
     # This works as intended and is quite fast. Requires a precalculated 
     # grid of bessel values. Use code in CAMB to generate this list.

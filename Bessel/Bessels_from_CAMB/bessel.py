@@ -60,7 +60,7 @@ def bjl(l, x):
             jl = 0.0
         elif ((ax2/l)<0.5):
             jl = exp(l * log(ax/nu) - ln2 + nu * onemln2 - (1.0 - (1.0 - 3.5/nu2)/nu2/30.0)/12.0/nu)/nu * (1.0 - ax2/(4.0*nu+4.0)*(1.0-ax2/(8.0*nu + 16.0)*(1.0-ax2/(12.0*nu + 36.0))))
-        elif ((double(l)**2/ax)<0.5):
+        elif ((float(l)**2/ax)<0.5):
             beta = ax - pid2*(l+1)
             jl = (cos(beta) * (1.0-(nu2 - 0.25)*(nu2-2.25)/8.0/ax2*(1.0-(nu2-6.25)*(nu2-12.25)/48.0/ax2)) - sin(beta)*(nu2-0.25)/2.0/ax*(1.0-(nu2-2.25)*(nu2-6.25)/24.0/ax2*(1.0-(nu2-12.25)*(nu2-20.25)/80.0/ax2)))/ax
         else:
@@ -74,7 +74,7 @@ def bjl(l, x):
                 cot3b = cotb**3
                 cot6b = cot3b**2
                 sec2b = secb**2
-                expterm=( (2.0+3.0*sec2b)*cot3b/24.0 - ( (4.0+sec2b)*sec2b*cot6b/16.0  + ((16.0-(1512.0+(3654.0+375.0*sec2b)*sec2b)*sec2b)*cot3b/5760.0 + (32.0+(288.0+(232.0+13.0*sec2b)*sec2b)*sec2b)*sec2b*cot6b/128.0/nu)*cot6b/nu)/NU)/NU
+                expterm=( (2.0+3.0*sec2b)*cot3b/24.0 - ( (4.0+sec2b)*sec2b*cot6b/16.0  + ((16.0-(1512.0+(3654.0+375.0*sec2b)*sec2b)*sec2b)*cot3b/5760.0 + (32.0+(288.0+(232.0+13.0*sec2b)*sec2b)*sec2b)*sec2b*cot6b/128.0/nu)*cot6b/nu)/nu)/nu
 
                 jl = sqrt(cotb*cosb)/(2.0*nu)*exp(-nu*beta+nu/cotb-expterm)
 
@@ -82,7 +82,7 @@ def bjl(l, x):
 
             elif (ax > (nu + 1.48 * l3)):
                 COSB=nu/ax
-                SX=sqrt(ax2-nu2)
+                sx=sqrt(ax2-nu2)
                 COTB=nu/sx
                 SECB=ax/nu
                 BETA=acos(COSB)

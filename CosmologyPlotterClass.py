@@ -175,33 +175,6 @@ class CosmoPlot(CosmoCalc):
         plt.grid(True)
         plt.show()
     
-    def plot_bessel_camb2(self, l, xmin, xmax, stepsize):
-        
-        nsteps = int((xmax-xmin)/float(stepsize))
-        x = [xmin + n*stepsize for n in range(0, nsteps)]
-        y = [self.sphbess_camb2(l,x1) for x1 in x]
-        plot1 = plt.plot(x, y, label = r'$j_l(x)$')
-        
-        plt.legend(loc = 'upper left')
-        plt.title(r'$j_l(x)$ vs $x$' )
-        plt.xlabel(r'$x$')
-        plt.ylabel(r'$j_l(x)$')
-        plt.grid(True)
-        plt.show()
-    def plot_bessel_camb_diff(self, l, xmin, xmax, stepsize):
-        
-        nsteps = int((xmax-xmin)/float(stepsize))
-        x = [xmin + n*stepsize for n in range(0, nsteps)]
-        y = [self.sphbess_camb(l,x1) - self.sphbess_camb2(l,x1) for x1 in x]
-        plot1 = plt.plot(x, y, label = r'$j_l(x)$')
-        
-        plt.legend(loc = 'upper left')
-        plt.title(r'$j_l(x) difference$ vs $x$' )
-        plt.xlabel(r'$x$')
-        plt.ylabel(r'$\Delta j_l(x)$')
-        plt.grid(True)
-        plt.show()
-
     def plot_P_camb(self, kmin, kmax, nsteps):
         stepsize = (kmax - kmin) / float(nsteps)
         x = [kmin + float(i) * stepsize for i in range(0, nsteps)]

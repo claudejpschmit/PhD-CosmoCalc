@@ -222,7 +222,7 @@ class CosmoCalc(CosmoBasis):
                     self.M(l, k1, k) *\
                     self.M(l, k2, k), k_low, k_high, 1000)
         return integral
-    
+
     ############### Then, we include redshift space distortions #########
    
     # Calculates the Tb correlation with redshift space distortions 
@@ -259,7 +259,6 @@ class CosmoCalc(CosmoBasis):
 
         res = self.prefactor_Ml * integral  
         return res
-
 
     #########################################################################
     # Mean Brightness Temperature fluctuations at distance r (comoving) [K]
