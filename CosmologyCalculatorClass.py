@@ -252,7 +252,7 @@ class CosmoCalc(CosmoBasis):
                 n = int(n_old)
             r = self.r_Ml[n]
             growth = self.growth_Ml[n]
-            return r**2 * self.delta_Tb_bar(r) * self.sphbess_camb(l,k1*r) *\
+            return r**2 * self.delta_Tb_bar(z) * self.sphbess_camb(l,k1*r) *\
                     self.sphbess_camb(l,k2*r)  * growth
         
         integral = self.integrate_simps(lambda z: integrand(z), self.zmin_Ml, self.zmax_Ml, self.nsteps_Ml)
@@ -262,10 +262,31 @@ class CosmoCalc(CosmoBasis):
 
     #########################################################################
     # Mean Brightness Temperature fluctuations at distance r (comoving) [K]
-    def delta_Tb_bar(self, r):
-        #TODO: find sensible constant
-        constant = 1
-        return constant
+    def delta_Tb_bar(self, z):
+        constant_A = 27*self.O_b * self.h**2 / 0.023 * sqrt(0.015/(self.O_M * self.h**2))
+        x_HI = self.x_HI(z)
+        T_S = self.T_S(z)
+        T_g = self.T(z)
+        velocity_gradient = 10000.0 #something
+
+        return constant_A * x_HI * (T_S - T_g)/T_S * velocity_gradient / (sqrt(1+z)*self.H(z))
+
+    def T_S(self, z):
+        Ti = 10.0 #something
+        Tf = 500.0 #something
+        rate = 1.0 #something
+        zi = self.z_rei
+        zf = zi - self.delta_z_rei #z at end of reionization
+        deltaT = Ti-Tf
+
+        return deltaT * (1/pi * atan(rate * (-(z - (zi + zf)/2.0)))+0.5) + Tf
+
+    def x_HI(self, z):
+        rate = 1.0 #something
+        zi = self.z_rei
+        zf = zi - self.delta_z_rei #z at end of reionization
+
+        return 1/pi * atan(rate * (z - (zi + zf)/2.0))+0.5
 
 
     # we seperate the power spectrum P(k,a) into a growing mode and P(k)

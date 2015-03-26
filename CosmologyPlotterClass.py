@@ -193,3 +193,16 @@ class CosmoPlot(CosmoCalc):
         
         plt.savefig('camb_powerspectrum.png')
         plt.show()
+        
+    def plot_dTb(self, zmin, zmax, nsteps):
+        stepsize = (zmax - zmin) / float(nsteps)
+        x = [zmin + float(i) * stepsize for i in range(0, nsteps)]
+        y1 = [self.delta_Tb_bar(z) for z in x]
+        plot1 = plt.plot(x, y1, label = r'$\delta\bar{T}_b(z)$')
+        plt.xlabel(r'$z$ ')
+        plt.ylabel(r'$\delta\bar{T}_b(z)$')
+
+        plt.legend(loc = 'upper right')
+        plt.title(r'$\delta\bar{T}_b(z)$ vs. $z$' )
+        plt.grid(True)
+        plt.show()

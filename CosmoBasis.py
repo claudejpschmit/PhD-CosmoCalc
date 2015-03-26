@@ -60,7 +60,7 @@ class CosmoBasis(object):
         self.sigma_8 = 0.8
            
         # Reionization regime
-        self.delta_z = 4.0
+        self.delta_z_rei = 4.0
         self.z_rei = 10.0
         self.z_CMB = 1100
 

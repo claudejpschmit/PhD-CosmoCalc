@@ -40,7 +40,10 @@ z = args.z
 
 plotter = CosmoPlot(args.H_0, args.O_M, args.O_V, args.z_low, args.z_high, args.T_CMB, args.bessel)
 
-plotter.plot_P_camb(0.001, 10, 10000)
+
+
+plotter.plot_dTb(5, 20,100)
+#plotter.plot_P_camb(0.001, 10, 10000)
 #plotter.plot_distances()
 #plotter.plot_bessel(200)
 #plotter.plot_bessel(2000)
