@@ -36,8 +36,6 @@ parser.add_argument('--T_CMB', metavar = 'T_CMB',
         type = float, default = 2.75, help = 'CMB temperature, default is T_CMB = 2.75')
 parser.add_argument('--p', metavar = 'profiling', 
         type = float, default = False, help = 'Turns on (1) or off (0) program profiling')
-parser.add_argument('--bessel', metavar = 'bessel', 
-        type = str, default = 'CAMB/JL_unformatted.bin', help = 'Filename of spherical bessel table, default is path = CAMB/JL_unformatted.bin')
 
 args = parser.parse_args()
 z = args.z
@@ -48,7 +46,7 @@ z = args.z
 def convert_to_gy(age):
     return age * 10**10 * 3.08568 / (365.25 * 24 * 3600)
 
-calc = CosmoCalc(args.H_0, args.O_M, args.O_V, args.z_low, args.z_high, args.T_CMB, args.bessel)
+calc = CosmoCalc(args.H_0, args.O_M, args.O_V, args.z_low, args.z_high, args.T_CMB)
 
 
 if not args.p:

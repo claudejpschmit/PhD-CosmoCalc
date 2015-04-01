@@ -82,20 +82,6 @@ class CosmoPlot(CosmoCalc):
         plt.savefig('hubble_parameter.png')
         plt.show()
         
-    def plot_x_HI(self, zmax, step):
-        maxrange = zmax * step
-        x = [float(i)/step for i in range(0, maxrange)]
-        y1 = [self.x_HI(z, 0.5, 10) for z in x]
-        plot1 = plt.plot(x, y1, label = r'$x_{HI}$')
-        plt.legend(loc = 'upper left')
-        plt.title(r'Neutral fraction $x_{HI}$ vs Redshift' )
-        plt.xlabel(r'Redshift $z$')
-        plt.ylabel(r'$h$')
-        plt.grid(True)
-
-        plt.savefig('x_HI.png')
-        plt.show()
-
     def plot_P(self, kmin, kmax, step, units_k = 'default', units_P = 'default'):
         stepsize = (kmax - kmin) / float(step)
         
@@ -148,19 +134,6 @@ class CosmoPlot(CosmoCalc):
         plt.savefig('P_growth.png')
         plt.show()
 
-    def plot_bessel(self, l):
-        
-        x = [self.bessel_xmin + n*self.bessel_xstep for n in range(0, self.bessel_npts - 1)]
-        y = [float(self.besseltable[l][n]) for n in range(0, self.bessel_npts - 1)]
-        plot1 = plt.plot(x, y, label = r'$j_l(x)$')
-        
-        plt.legend(loc = 'upper left')
-        plt.title(r'$j_l(x)$ vs $x$' )
-        plt.xlabel(r'$x$')
-        plt.ylabel(r'$j_l(x)$')
-        plt.grid(True)
-        plt.show()
-    
     def plot_bessel_camb(self, l, xmin, xmax, stepsize):
         
         nsteps = int((xmax-xmin)/float(stepsize))
@@ -178,8 +151,10 @@ class CosmoPlot(CosmoCalc):
     def plot_P_camb(self, kmin, kmax, nsteps):
         stepsize = (kmax - kmin) / float(nsteps)
         x = [kmin + float(i) * stepsize for i in range(0, nsteps)]
-        y1 = [self.camb_P_interp(k) for k in x]
-        plot1 = plt.scatter(x, y1, label = r'P(k)')
+        y1 = [self.Pk_interp(k,self.zmin_Ml) for k in x]
+        plot1 = plt.scatter(x, y1, label = r'$P(k,z=z_0)$',color='red')
+        y2 = [self.Pk_interp(k,self.zmin_Ml+0.5) for k in x]
+        plot2 = plt.scatter(x, y2, label = r'$P(k,z=z_0+0.5)$',color='blue')
         plt.xlabel(r'$k$ $(h \, Mpc^{-1})$')
         plt.gca().set_xscale('log')
         plt.gca().set_yscale('log')

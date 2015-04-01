@@ -45,14 +45,12 @@ parser.add_argument('--z_high', metavar = 'z_high',
         type = float, default = 9, help = 'top bound for z integration, default is z_high = 9')
 parser.add_argument('--method', metavar = 'method', 
         type = int, default = 2, help = 'Integration method, either 0 for scipy or 1 for mp or 2 for simpson, default is method = 2')
-parser.add_argument('--bessel', metavar = 'bessel', 
-        type = str, default = 'CAMB/JL_unformatted.bin', help = 'Filename of spherical bessel table, default is path = CAMB/JL_unformatted.bin')
 
 args = parser.parse_args()
 
 ################# Output ################## 
 
-writer = CosmoWrite(args.H_0, args.O_M, args.O_V, args.z_low, args.z_high, args.T_CMB, args.bessel)
+writer = CosmoWrite(args.H_0, args.O_M, args.O_V, args.z_low, args.z_high, args.T_CMB)
 
 if args.method == 0:
     writer.calculate_Ml_scipy(args.l, args.k_fixed, args.k2_low, args.k2_high, args.z_low, args.z_high, args.steps, args.stepsize)

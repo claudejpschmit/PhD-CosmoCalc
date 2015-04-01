@@ -13,12 +13,13 @@ from CosmoBasis import CosmoBasis
 
 from math import *
 import scipy.integrate as integrate
+import scipy.interpolate as interpolate
 import numpy as np
 
 class CosmoCalc(CosmoBasis):
    
-    def __init__(self, H_0, O_M, O_V, z_low_integration, z_high_integration, T_CMB, besseltable):
-        CosmoBasis.__init__(self, H_0, O_M, O_V, z_low_integration, z_high_integration, T_CMB, besseltable)
+    def __init__(self, H_0, O_M, O_V, z_low_integration, z_high_integration, T_CMB):
+        CosmoBasis.__init__(self, H_0, O_M, O_V, z_low_integration, z_high_integration, T_CMB)
 
         # Creating a list of Comoving distances between z_low & z_high to speed up M_l integration
         # Also creating list of growth functions
@@ -28,16 +29,25 @@ class CosmoCalc(CosmoBasis):
         self.stepsize_Ml = (self.zmax_Ml - self.zmin_Ml)/float(self.nsteps_Ml)
 
         self.r_Ml = []
-        self.growth_Ml = []
         for n in range(0,self.nsteps_Ml + 1):
             z = self.zmin_Ml + n * self.stepsize_Ml
             self.r_Ml.append(self.D_C(z))
-            integral = integrate.quad(lambda x: (1+x) / self.E(x)**3, z, np.inf)
-            self.growth_Ml.append(integral[0])
 
-        B = integrate.quad(lambda x: (1+x) / self.E(x)**3, 0, np.inf) 
-        self.prefactor_Ml = 2*self.b_bias*self.c/(B[0]*pi*self.H_0*1000)
+        # factor of 1000 in order to get the units right later on
+        # ie Ml wil have units [Mpc^3 * Mpc^(3/2) mK]
+        self.prefactor_Ml = 2*self.b_bias*self.c/(pi*1000)
             
+        #defining default parameters:
+        # params[0] = ombh2
+        # params[1] = omch2
+        # params[2] = omnuh2
+        # params[3] = omk
+        # params[4] = hubble
+        self.params = [0.0226, 0.112, 0.00064, 0.0, self.H_0]
+
+        #defining default interpolator
+        # This calculates the matter power spectrum in units [h^(-3)Mpc^3]
+        self.Pk_interp = self.Pk_update_interpolator(self.params, self.zmin_Ml, self.zmax_Ml, 10)
         
         # Let's user know that initialisation is done
         print "CosmoCalc initialized"
@@ -176,10 +186,6 @@ class CosmoCalc(CosmoBasis):
         num = 4.0/3.0 * pi * (self.c/self.H_SI(0))**3 * self.rho_crit(0)
         return num / self.m_b
     
-    # Neutral fraction x_HI
-    def x_HI(self, z, delta_z, z_reionization):
-        return 0.5 * (tanh((z-z_reionization) / delta_z) + 1)
-
     ##################### Thermodynamics  ########################
     
     # Temperature of the universe in terms of redshift z [K]
@@ -206,32 +212,63 @@ class CosmoCalc(CosmoBasis):
         return self.n_p(z)
 
     ################## Power Spectrum Calculations #####################
-    #TODO: Currently this does not give P(k) in terms of redshift...
     #TODO: Also, check for units, which ones will we need? May have to introduce norm. factors.
     # This function takes a set of Cosmological parameters and uses CAMB 
-    # to compute/update the Power spectrum for those.
-    def Pk_update(params):
-        camb_result_dict = self.camb(ombh2 = params[0], omch2 = params[1],\
-                omnuh2 = params[3], omk = params[4], hubble = params[5])
-        self.Pk_table = camb_result_dict["transfer_matterpower"]
-        yield # This keyword defines a void-like function.
-    
-    # Matter Power spectrum from CAMB
-    # TODO: is there a better way to do this?
-    def camb_P_interp(self, k):
-        n = 0
-        kcamb = self.Pk_table[n][0]
-        while (kcamb < k):
-            n += 1
-            kcamb = self.Pk_table[n][0]
-        n -= 1
-        y0 = self.Pk_table[n][1]
-        y1 = self.Pk_table[n+1][1]
-        x0 = self.Pk_table[n][0]
-        x1 = self.Pk_table[n+1][0]
+    # to compute the Power spectrum for those. The results are then used to return a function f
+    # that can be used as f(k,z) to interpolate the power spectrum at a given point (k,z).
+    def Pk_update_interpolator(self, params, zi, zf, nsteps):
+        z_stepsize = float(zf-zi)/float(nsteps)
+        table = []
+        table_z = []
+        for n in range(0, nsteps + 1):
+            # create array with all z values
+            z = zi + n * z_stepsize
+            table_z.append(z)
+
+            # generate p(k,z) from camb
+            camb_result_dict = self.camb(**{'ombh2':params[0], 'omch2':params[1],\
+                    'omnuh2':params[2], 'omk':params[3], 'hubble':params[4],\
+                    'transfer_redshift(1)':z})
+            res = camb_result_dict["transfer_matterpower"]
+           
+            table.append(res)
         
-        res = (y1-y0)*(k-x0)/(x1-x0) + y0
-        return res
+        #number of kvalues
+        nkvals = len(table[0])
+        table_k = []
+        for n in range(0,nkvals):
+            #store all kvalues into table_k
+            table_k.append(table[0][n][0])
+
+        table_Pkz = []
+        for m in range(0,nsteps+1):
+            row = []
+            for n in range(0,nkvals):
+                row.append(table[m][n][1])
+            table_Pkz.append(row)
+
+        f = interpolate.interp2d(table_k, table_z, table_Pkz, kind = 'cubic')
+        return f
+     
+             
+# def P_interp(self, k, z):
+#        f = interpolate.i
+#    # Matter Power spectrum from CAMB
+#    # TODO: is there a better way to do this?
+#    def camb_P_interp(self, k):
+#        n = 0
+#        kcamb = self.Pk_table[n][0]
+#        while (kcamb < k):
+#            n += 1
+#            kcamb = self.Pk_table[n][0]
+#        n -= 1
+#        y0 = self.Pk_table[n][1]
+#        y1 = self.Pk_table[n+1][1]
+#        x0 = self.Pk_table[n][0]
+#        x1 = self.Pk_table[n+1][0]
+#        
+#        res = (y1-y0)*(k-x0)/(x1-x0) + y0
+#        return res
 
     # ## The following defines methods to calculate the Power Spectrum from scratch ##
     def Pkz_calc(self, k, z):
@@ -305,11 +342,10 @@ class CosmoCalc(CosmoBasis):
     # Calculates the Tb correlation without redshift space distortions 
     # between redshifts z1 & z2.
     # use eg. z1 = 6 & z2 = 10 
-    # This has units [MPc^6 K^2]
+    # This has units [MPc^6 mK^2]
     def corr_Tb(self, l, k1, k2, k_low, k_high):
         #TODO: figure out integration limits kkk
         integral = self.integrate_simps(lambda k: k**2 *\
-                    self.camb_P_interp(k) *\
                     self.M(l, k1, k) *\
                     self.M(l, k2, k), k_low, k_high, 1000)
         return integral
@@ -319,7 +355,7 @@ class CosmoCalc(CosmoBasis):
     # Calculates the Tb correlation with redshift space distortions 
     # between redshifts z1 & z2.
     # use eg. z1 = 6 & z2 = 10 
-    # This has units [MPc^6 K^2]
+    # This has units [MPc^6 mK^2]
     def corr_Tb_rsd(self, l, k1, k2, k_low, k_high):
         def integrand(k):
             res = k**2 *  self.P_delta(k, units_k = 'mpc-1', units_P = 'mpc3') *\
@@ -343,9 +379,10 @@ class CosmoCalc(CosmoBasis):
             else:
                 n = int(n_old)
             r = self.r_Ml[n]
-            growth = self.growth_Ml[n]
+            
             return r**2 * self.delta_Tb_bar(z) * self.sphbess_camb(l,k1*r) *\
-                    self.sphbess_camb(l,k2*r)  * growth
+                    self.sphbess_camb(l,k2*r)  * sqrt(self.Pk_interp(k2,z)/self.h**3) /\
+                    self.H(z)
         
         integral = self.integrate_simps(lambda z: integrand(z), self.zmin_Ml, self.zmax_Ml, self.nsteps_Ml)
 
@@ -353,7 +390,7 @@ class CosmoCalc(CosmoBasis):
         return res
 
     #########################################################################
-    # Mean Brightness Temperature fluctuations at distance r (comoving) [K]
+    # Mean Brightness Temperature fluctuations at distance r (comoving) [mK]
     # This does not include the peculiar velocity in form of the velocity gradient, as that 
     # is separately introduced into the formalism
     def delta_Tb_bar(self, z):

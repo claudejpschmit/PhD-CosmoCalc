@@ -12,7 +12,7 @@ import bessel # This is the python version
 
 class CosmoBasis(object):
     # Initializer fixes constant parameters
-    def __init__(self, H_0, O_M, O_V, z_low_integration, z_high_integration, T_CMB, besseltable):
+    def __init__(self, H_0, O_M, O_V, z_low_integration, z_high_integration, T_CMB):
         # Hubble constant H_0 [km s^-1 Mpc^-1]
         self.H_0 = H_0
         # Hubble parameter h [ dimensionless ]
@@ -72,77 +72,18 @@ class CosmoBasis(object):
         # k_eq scalles at horizon crossing [Mpc^-1]
         self.k_eq = 0.073 * self.O_M * self.h**2
         
-        #this includes a matrix of all the values in the bessel function table
-        self.besseltable = self.read_binary_bessel_table(besseltable)
-        #uncomment to use text file input instead of fortran binary.
-        #self.besseltable = self.read_bessel_table(besseltable)
-
         #create CAMB object and results.
         self.camb = camb4py.load('CAMB/camb', defaults='CAMB/params.ini')
-        camb_result_dict = self.camb()
-        self.Pk_table = camb_result_dict["transfer_matterpower"]
-         
-                       
+
         print "CosmoBasis initialized"
 #######################################################################
-    # This function reads in a table of bessel function values and
-    # retruns it as a matrix.
-    def read_bessel_table(self, bt):
-
-        file = open(bt, 'r')
-        data = csv.reader(file, delimiter=' ')
-        bessel_table = [row for row in data ]
-        
-        self.bessel_lmin = int(bessel_table[0][0])
-        self.bessel_lmax = int(bessel_table[0][1])
-        self.bessel_xmin = float(bessel_table[0][2])
-        self.bessel_xmax = float(bessel_table[0][3]) 
-        self.bessel_npts = int(bessel_table[0][4]) 
-        bessel_table.pop(0)
-        return bessel_table
-    
-    # This function reads in a table of bessel function values from bin file and
-    # retruns it as a matrix.
-    def read_binary_bessel_table(self, bt):
-
-        f = FortranFile(bt)
-    
-        file_datarow = f.readReals('f')  
-        self.bessel_lmin = int(file_datarow[0])
-        self.bessel_lmax = int(file_datarow[1])
-        self.bessel_xmin = file_datarow[2]
-        self.bessel_xmax = file_datarow[3]
-        self.bessel_npts = int(file_datarow[4])
-       
-        file_datarow = f.readReals('f')  
-        
-        self.bessel_xstep = self.bessel_xmax/float(self.bessel_npts)
-
-        bessel_table = []
-        row = []
-        for l in range(0,self.bessel_lmax):
-            for n in range(0, self.bessel_npts):
-                row.append(file_datarow[l+n*(self.bessel_lmax+1)])
-            bessel_table.append(row)
-            row = []
-        return bessel_table
     
     # This function uses the subroutine bjl from CAMB to efficiently compute spherical bessel functions. 
     # If for some reason f2py is not working, then comment first line here and uncomment second.
+    # This will use a Python translation of the Fortran code, but this is slower!
     def sphbess_camb(self, l, x):
         return bessels.bjl(l, x)
         #return bessel.bjl(l, x)
-
-    # Interpolation function for Spherical bessel functions.
-    # This works as intended and is quite fast. Requires a precalculated 
-    # grid of bessel values. Use code in CAMB to generate this list.
-    def sphbess_interp(self, l, x):
-        n = (x-self.bessel_xmin)/self.bessel_xstep
-        y0 = float(self.besseltable[l][int(n)])
-        y1 = float(self.besseltable[l][int(n) + 1])
-
-        res = (y1-y0)*(n-int(n)) + y0
-        return res
 
     # Helper function, denominator for various integrals
     # E(z) = H(z)/H_0 
