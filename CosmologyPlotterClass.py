@@ -206,3 +206,45 @@ class CosmoPlot(CosmoCalc):
         plt.title(r'$\delta\bar{T}_b(z)$ vs. $z$' )
         plt.grid(True)
         plt.show()
+        
+    def plot_xHI(self, zmin, zmax, nsteps):
+        stepsize = (zmax - zmin) / float(nsteps)
+        x = [zmin + float(i) * stepsize for i in range(0, nsteps)]
+        y1 = [self.x_HI(z) for z in x]
+        plot1 = plt.plot(x, y1, label = r'$x_{HI}(z)$')
+        plt.xlabel(r'$z$ ')
+        plt.ylabel(r'$x_{HI}(z)$')
+
+        plt.legend(loc = 'upper right')
+        plt.title(r'$x_{HI}(z)$ vs. $z$' )
+        plt.grid(True)
+        plt.show()
+    def plot_Ts(self, zmin, zmax, nsteps):
+        stepsize = (zmax - zmin) / float(nsteps)
+        x = [zmin + float(i) * stepsize for i in range(0, nsteps)]
+        y1 = [self.T_S(z) for z in x]
+        plot1 = plt.plot(x, y1, label = r'$T_{S}(z)$')
+        plt.xlabel(r'$z$ ')
+        plt.ylabel(r'$T_{S}(z)$')
+
+        plt.legend(loc = 'upper right')
+        plt.title(r'$T_{S}(z)$ vs. $z$' )
+        plt.grid(True)
+        plt.show()
+        
+    def plot_Tk(self, zmin, zmax, nsteps):
+        stepsize = (zmax - zmin) / float(nsteps)
+        x = [zmin + float(i) * stepsize for i in range(0, nsteps)]
+        y1 = [self.T_K(z) for z in x]
+        y2 = [self.T(z) for z in x]
+        plot1 = plt.plot(x, y1, label = r'$T_{K}(z)$')
+        plot2 = plt.plot(x, y2, label = r'$T_{CMB}(z)$')
+        plt.xlabel(r'$z$ ')
+        plt.ylabel(r'$T_{K}(z)$')
+        plt.gca().set_xscale('log')
+        plt.gca().set_yscale('log')
+
+        plt.legend(loc = 'upper right')
+        plt.title(r'$T_{K}(z)$ vs. $z$' )
+        plt.grid(True)
+        plt.show()

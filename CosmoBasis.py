@@ -79,8 +79,8 @@ class CosmoBasis(object):
 
         #create CAMB object and results.
         self.camb = camb4py.load('CAMB/camb', defaults='CAMB/params.ini')
-        self.camb_result_dict = self.camb()
-        self.Pk_table = self.camb_result_dict["transfer_matterpower"]
+        camb_result_dict = self.camb()
+        self.Pk_table = camb_result_dict["transfer_matterpower"]
          
                        
         print "CosmoBasis initialized"

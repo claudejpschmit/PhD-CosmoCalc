@@ -205,92 +205,40 @@ class CosmoCalc(CosmoBasis):
     def n_e(self, z):
         return self.n_p(z)
 
-    ####################################################################
-    ####### Two point Correlation of brightness tem. fluctuations ######
-    ####################################################################
-
-    ############### first we ignore redshift space distortions #########
-   
-    # Calculates the Tb correlation without redshift space distortions 
-    # between redshifts z1 & z2.
-    # use eg. z1 = 6 & z2 = 10 
-    # This has units [MPc^6 K^2]
-    def corr_Tb(self, l, k1, k2, k_low, k_high):
-        #TODO: figure out integration limits kkk
-        integral = self.integrate_simps(lambda k: k**2 *\
-                    self.camb_P_interp(k) *\
-                    self.M(l, k1, k) *\
-                    self.M(l, k2, k), k_low, k_high, 1000)
-        return integral
-
-    ############### Then, we include redshift space distortions #########
-   
-    # Calculates the Tb correlation with redshift space distortions 
-    # between redshifts z1 & z2.
-    # use eg. z1 = 6 & z2 = 10 
-    # This has units [MPc^6 K^2]
-    def corr_Tb_rsd(self, l, k1, k2, k_low, k_high):
-        def integrand(k):
-            res = k**2 *  self.P_delta(k, units_k = 'mpc-1', units_P = 'mpc3') *\
-                   (self.M(l, k1, k) * self.M(l, k2, k) +\
-                   self.bias * self.beta * (self.M(l, k1, k) * self.N_bar(l, k2, k) + self.N_bar(l, k1, k) * self.M(l, k2, k)) +\
-                   self.bias**2 * self.beta**2 * self.N_bar(l, k1, k) * self.N_bar(l, k2, k))
-            return res
-
-        integral = self.integrate_simps(lambda k: integrand(k), k_low, k_high, 1000)
-        return integral
-
-    ########################################################################
-    # this function uses simple Simpson integration and gets spherical Bessels from CAMB.
-
-    def M(self, l, k1, k2):
-        def integrand(z):
-            n_old = (z - self.zmin_Ml)/self.stepsize_Ml
-            if abs(n_old-int(n_old)) > 0.5:
-                n = int(n_old)+1
-            else:
-                n = int(n_old)
-            r = self.r_Ml[n]
-            growth = self.growth_Ml[n]
-            return r**2 * self.delta_Tb_bar(z) * self.sphbess_camb(l,k1*r) *\
-                    self.sphbess_camb(l,k2*r)  * growth
+    ################## Power Spectrum Calculations #####################
+    #TODO: Currently this does not give P(k) in terms of redshift...
+    #TODO: Also, check for units, which ones will we need? May have to introduce norm. factors.
+    # This function takes a set of Cosmological parameters and uses CAMB 
+    # to compute/update the Power spectrum for those.
+    def Pk_update(params):
+        camb_result_dict = self.camb(ombh2 = params[0], omch2 = params[1],\
+                omnuh2 = params[3], omk = params[4], hubble = params[5])
+        self.Pk_table = camb_result_dict["transfer_matterpower"]
+        yield # This keyword defines a void-like function.
+    
+    # Matter Power spectrum from CAMB
+    # TODO: is there a better way to do this?
+    def camb_P_interp(self, k):
+        n = 0
+        kcamb = self.Pk_table[n][0]
+        while (kcamb < k):
+            n += 1
+            kcamb = self.Pk_table[n][0]
+        n -= 1
+        y0 = self.Pk_table[n][1]
+        y1 = self.Pk_table[n+1][1]
+        x0 = self.Pk_table[n][0]
+        x1 = self.Pk_table[n+1][0]
         
-        integral = self.integrate_simps(lambda z: integrand(z), self.zmin_Ml, self.zmax_Ml, self.nsteps_Ml)
-
-        res = self.prefactor_Ml * integral  
+        res = (y1-y0)*(k-x0)/(x1-x0) + y0
         return res
 
-    #########################################################################
-    # Mean Brightness Temperature fluctuations at distance r (comoving) [K]
-    def delta_Tb_bar(self, z):
-        constant_A = 27*self.O_b * self.h**2 / 0.023 * sqrt(0.015/(self.O_M * self.h**2))
-        x_HI = self.x_HI(z)
-        T_S = self.T_S(z)
-        T_g = self.T(z)
-        velocity_gradient = 10000.0 #something
-
-        return constant_A * x_HI * (T_S - T_g)/T_S * velocity_gradient / (sqrt(1+z)*self.H(z))
-
-    def T_S(self, z):
-        Ti = 10.0 #something
-        Tf = 500.0 #something
-        rate = 1.0 #something
-        zi = self.z_rei
-        zf = zi - self.delta_z_rei #z at end of reionization
-        deltaT = Ti-Tf
-
-        return deltaT * (1/pi * atan(rate * (-(z - (zi + zf)/2.0)))+0.5) + Tf
-
-    def x_HI(self, z):
-        rate = 1.0 #something
-        zi = self.z_rei
-        zf = zi - self.delta_z_rei #z at end of reionization
-
-        return 1/pi * atan(rate * (z - (zi + zf)/2.0))+0.5
-
-
+    # ## The following defines methods to calculate the Power Spectrum from scratch ##
+    def Pkz_calc(self, k, z):
+        return self.P_growth(z) * self.P_delta(k)
+    
     # we seperate the power spectrum P(k,a) into a growing mode and P(k)
-    # P(k,a) = P_delta(k) * P_growth(a)
+    # P(k,z) = P_delta(k) * P_growth(z)
     def P_growth(self, z):
         res = self.D1(z) / self.D1(0)
         return res**2
@@ -346,23 +294,112 @@ class CosmoCalc(CosmoBasis):
         res = res * bracket**(-0.25)
         return res
     
-    # Matter Power spectrum from camb
-    # TODO: is there a better way to do this?
-    def camb_P_interp(self, k):
-        n = 0
-        kcamb = self.Pk_table[n][0]
-        while (kcamb < k):
-            n += 1
-            kcamb = self.Pk_table[n][0]
-        n -= 1
-        y0 = self.Pk_table[n][1]
-        y1 = self.Pk_table[n+1][1]
-        x0 = self.Pk_table[n][0]
-        x1 = self.Pk_table[n+1][0]
-        
-        res = (y1-y0)*(k-x0)/(x1-x0) + y0
-        return res
     
+
+    ####################################################################
+    ####### Two point Correlation of brightness tem. fluctuations ######
+    ####################################################################
+
+    ############### first we ignore redshift space distortions #########
+   
+    # Calculates the Tb correlation without redshift space distortions 
+    # between redshifts z1 & z2.
+    # use eg. z1 = 6 & z2 = 10 
+    # This has units [MPc^6 K^2]
+    def corr_Tb(self, l, k1, k2, k_low, k_high):
+        #TODO: figure out integration limits kkk
+        integral = self.integrate_simps(lambda k: k**2 *\
+                    self.camb_P_interp(k) *\
+                    self.M(l, k1, k) *\
+                    self.M(l, k2, k), k_low, k_high, 1000)
+        return integral
+
+    ############### Then, we include redshift space distortions #########
+   
+    # Calculates the Tb correlation with redshift space distortions 
+    # between redshifts z1 & z2.
+    # use eg. z1 = 6 & z2 = 10 
+    # This has units [MPc^6 K^2]
+    def corr_Tb_rsd(self, l, k1, k2, k_low, k_high):
+        def integrand(k):
+            res = k**2 *  self.P_delta(k, units_k = 'mpc-1', units_P = 'mpc3') *\
+                   (self.M(l, k1, k) * self.M(l, k2, k) +\
+                   self.bias * self.beta * (self.M(l, k1, k) * self.N_bar(l, k2, k) +\
+                   self.N_bar(l, k1, k) * self.M(l, k2, k)) +\
+                   self.bias**2 * self.beta**2 * self.N_bar(l, k1, k) * self.N_bar(l, k2, k))
+            return res
+
+        integral = self.integrate_simps(lambda k: integrand(k), k_low, k_high, 1000)
+        return integral
+
+    ########################################################################
+    # this function uses simple Simpson integration and gets spherical Bessels from CAMB.
+
+    def M(self, l, k1, k2):
+        def integrand(z):
+            n_old = (z - self.zmin_Ml)/self.stepsize_Ml
+            if abs(n_old-int(n_old)) > 0.5:
+                n = int(n_old)+1
+            else:
+                n = int(n_old)
+            r = self.r_Ml[n]
+            growth = self.growth_Ml[n]
+            return r**2 * self.delta_Tb_bar(z) * self.sphbess_camb(l,k1*r) *\
+                    self.sphbess_camb(l,k2*r)  * growth
+        
+        integral = self.integrate_simps(lambda z: integrand(z), self.zmin_Ml, self.zmax_Ml, self.nsteps_Ml)
+
+        res = self.prefactor_Ml * integral  
+        return res
+
+    #########################################################################
+    # Mean Brightness Temperature fluctuations at distance r (comoving) [K]
+    # This does not include the peculiar velocity in form of the velocity gradient, as that 
+    # is separately introduced into the formalism
+    def delta_Tb_bar(self, z):
+        constant_A = 27*self.O_b * self.h**2 / 0.023 * sqrt(0.015/(self.O_M * self.h**2))
+        x_HI = self.x_HI(z)
+        T_S = self.T_S(z)
+        T_g = self.T(z)
+
+        return constant_A * x_HI * (T_S - T_g)/T_S * sqrt(1+z)
+        #return constant_A * x_HI * sqrt(1+z)
+    def T_S(self, z):
+        Ti = 10.0 #something
+        Tf = 500.0 #something
+        rate = 2.0 #something
+        zi = self.z_rei
+        zf = zi - self.delta_z_rei #z at end of reionization
+        deltaT = abs(Ti-Tf)
+
+        return deltaT * (1/pi * atan(rate * (-(z - (zi + zf)/2.0)))+0.5) + Ti
+
+    def x_HI(self, z):
+        rate = 2.0 #something
+        zi = self.z_rei
+        zf = zi - self.delta_z_rei #z at end of reionization
+
+        return 1/pi * atan(rate * (z - (zi + zf)/2.0))+0.5
+    
+    def T_K(self, z):
+        zd = 200.0 #something
+        if z > zd:
+            res = self.T(z)
+        else:
+            Td = self.T(zd) 
+            Tf = 1000.0 #something
+            rate = 1.0 #something
+            z_on = self.z_rei
+            z0 = (2*z_on - 4)/2
+            tanh_term = (0.5*(tanh(rate * (-(z - z0)))+1)) * Tf 
+            res = Td * (1+z)**2/(1+zd)**2 + tanh_term
+        
+        return res
+       
+
+
+
+        
     # for included rsd #
     ######### Separable growth
     def I(self, l1, l2, k1, k2, z, r):
