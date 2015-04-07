@@ -25,11 +25,11 @@ class CosmoCalc(CosmoBasis):
         # Also creating list of growth functions
         self.zmin_Ml = z_low_integration
         self.zmax_Ml = z_high_integration
-        self.nsteps_Ml = 1000
-        self.stepsize_Ml = (self.zmax_Ml - self.zmin_Ml)/float(self.nsteps_Ml)
+        self.zsteps_Ml = 1000
+        self.stepsize_Ml = (self.zmax_Ml - self.zmin_Ml)/float(self.zsteps_Ml)
 
         self.r_Ml = []
-        for n in range(0,self.nsteps_Ml + 1):
+        for n in range(0,self.zsteps_Ml + 1):
             z = self.zmin_Ml + n * self.stepsize_Ml
             self.r_Ml.append(self.D_C(z))
 
@@ -384,7 +384,7 @@ class CosmoCalc(CosmoBasis):
                     self.sphbess_camb(l,k2*r)  * sqrt(self.Pk_interp(k2,z)/self.h**3) /\
                     self.H(z)
         
-        integral = self.integrate_simps(lambda z: integrand(z), self.zmin_Ml, self.zmax_Ml, self.nsteps_Ml)
+        integral = self.integrate_simps(lambda z: integrand(z), self.zmin_Ml, self.zmax_Ml, self.zsteps_Ml)
 
         res = self.prefactor_Ml * integral  
         return res
