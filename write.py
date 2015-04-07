@@ -23,6 +23,8 @@ parser.add_argument('--O_M', metavar = 'O_M',
         type = float, default = 0.3, help = 'Matter density, default is O_M = 0.3')
 parser.add_argument('--O_V', metavar = 'O_V', 
         type = float, default = 0.7, help = 'Vacuum density, default is O_V = 0.7')
+parser.add_argument('--O_b', metavar = 'O_b',
+        type = float, default = 0.046, help = 'Baryon density, default is O_b = 0.046')
 parser.add_argument('--z', metavar = 'z', 
         type = float, default = 3, help = 'redshift, default is z = 3')
 parser.add_argument('--T_CMB', metavar = 'T_CMB', 
@@ -49,8 +51,15 @@ parser.add_argument('--method', metavar = 'method',
 args = parser.parse_args()
 
 ################# Output ################## 
-
-writer = CosmoWrite(args.H_0, args.O_M, args.O_V, args.z_low, args.z_high, args.T_CMB)
+# generate parameters
+h = args.H_0 / 100.0
+ombh2 = args.O_b / h**2
+omch2 = (args.O_M - args.O_b) * h**2
+omk = 1.0 - args.O_M - args.O_V
+omnuh2 = 0.00064
+params = {"ombh2":ombh2, "omch2":omch2, "omnuh2":omnuh2, "omk":omk, "hubble":args.H_0}
+# initialize writer
+writer = CosmoWrite(params, args.z_low, args.z_high, args.T_CMB)
 
 if args.method == 0:
     writer.calculate_Ml_scipy(args.l, args.k_fixed, args.k2_low, args.k2_high, args.z_low, args.z_high, args.steps, args.stepsize)

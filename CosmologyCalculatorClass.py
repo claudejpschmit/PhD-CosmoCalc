@@ -18,8 +18,8 @@ import numpy as np
 
 class CosmoCalc(CosmoBasis):
    
-    def __init__(self, H_0, O_M, O_V, z_low_integration, z_high_integration, T_CMB):
-        CosmoBasis.__init__(self, H_0, O_M, O_V, z_low_integration, z_high_integration, T_CMB)
+    def __init__(self, params, z_low_integration, z_high_integration, T_CMB):
+        CosmoBasis.__init__(self, params, z_low_integration, z_high_integration, T_CMB)
 
         # Creating a list of Comoving distances between z_low & z_high to speed up M_l integration
         # Also creating list of growth functions
@@ -28,30 +28,29 @@ class CosmoCalc(CosmoBasis):
         self.zsteps_Ml = 1000
         self.stepsize_Ml = (self.zmax_Ml - self.zmin_Ml)/float(self.zsteps_Ml)
 
+        # define the fiducial model r values.
         self.r_Ml = []
         for n in range(0,self.zsteps_Ml + 1):
             z = self.zmin_Ml + n * self.stepsize_Ml
             self.r_Ml.append(self.D_C(z))
 
+        # We initialize the model to be equal to the fiducial model
+        self.q_Ml = self.r_Ml
+
         # factor of 1000 in order to get the units right later on
         # ie Ml wil have units [Mpc^3 * Mpc^(3/2) mK]
         self.prefactor_Ml = 2*self.b_bias*self.c/(pi*1000)
-            
-        #defining default parameters:
-        # params[0] = ombh2
-        # params[1] = omch2
-        # params[2] = omnuh2
-        # params[3] = omk
-        # params[4] = hubble
-        self.params = [0.0226, 0.112, 0.00064, 0.0, self.H_0]
+        
+        # store the initial parameters as the fiducial parameters.
+        self.fiducial_params = params
 
         #defining default interpolator
         # This calculates the matter power spectrum in units [h^(-3)Mpc^3]
-        self.Pk_interp = self.Pk_update_interpolator(self.params, self.zmin_Ml, self.zmax_Ml, 10)
-        
+        #self.Pk_interp = self.Pk_update_interpolator(self.params, self.zmin_Ml, self.zmax_Ml, 3)
+        self.Pk_update_interpolator(self.fiducial_params, self.zmin_Ml, self.zmax_Ml, 3)
+
         # Let's user know that initialisation is done
         print "CosmoCalc initialized"
-
 
 #############################################################################
     # Hubble Time [s * Mpc/km]: 
@@ -96,7 +95,7 @@ class CosmoCalc(CosmoBasis):
     #                       D_M1 sqrt(1+(1-O_tot) D_M2^2/D_H^2) )
     def angular_diam_dist(self, z, z2 = None):
         O_k = 1-self.O_M-self.O_V
-        root = sqrt(abs(1-self.O_tot))
+        root = sqrt(abs(self.O_k))
         
         if z2 is None:
             return self.D_H * self.S_k((root) * self.Z(z))/ \
@@ -214,8 +213,8 @@ class CosmoCalc(CosmoBasis):
     ################## Power Spectrum Calculations #####################
     #TODO: Also, check for units, which ones will we need? May have to introduce norm. factors.
     # This function takes a set of Cosmological parameters and uses CAMB 
-    # to compute the Power spectrum for those. The results are then used to return a function f
-    # that can be used as f(k,z) to interpolate the power spectrum at a given point (k,z).
+    # to compute the Power spectrum for those. The results are then used to update the interpolation
+    # function for the power spectrum P(k,z).
     def Pk_update_interpolator(self, params, zi, zf, nsteps):
         z_stepsize = float(zf-zi)/float(nsteps)
         table = []
@@ -226,8 +225,8 @@ class CosmoCalc(CosmoBasis):
             table_z.append(z)
 
             # generate p(k,z) from camb
-            camb_result_dict = self.camb(**{'ombh2':params[0], 'omch2':params[1],\
-                    'omnuh2':params[2], 'omk':params[3], 'hubble':params[4],\
+            camb_result_dict = self.camb(**{'ombh2':params["ombh2"], 'omch2':params["omch2"],\
+                    'omnuh2':params["omnuh2"], 'omk':params["omk"], 'hubble':params["hubble"],\
                     'transfer_redshift(1)':z})
             res = camb_result_dict["transfer_matterpower"]
            
@@ -247,8 +246,10 @@ class CosmoCalc(CosmoBasis):
                 row.append(table[m][n][1])
             table_Pkz.append(row)
 
-        f = interpolate.interp2d(table_k, table_z, table_Pkz, kind = 'cubic')
-        return f
+        self.Pk_interp = interpolate.interp2d(table_k, table_z, table_Pkz, kind = 'cubic')
+
+        return None
+
      
              
 # def P_interp(self, k, z):
@@ -344,7 +345,6 @@ class CosmoCalc(CosmoBasis):
     # use eg. z1 = 6 & z2 = 10 
     # This has units [MPc^6 mK^2]
     def corr_Tb(self, l, k1, k2, k_low, k_high):
-        #TODO: figure out integration limits kkk
         integral = self.integrate_simps(lambda k: k**2 *\
                     self.M(l, k1, k) *\
                     self.M(l, k2, k), k_low, k_high, 1000)
@@ -369,9 +369,11 @@ class CosmoCalc(CosmoBasis):
         return integral
 
     ########################################################################
-    # this function uses simple Simpson integration and gets spherical Bessels from CAMB.
+    
+    ############### Then we define the M_l and N_l matrices. ###############
 
     def M(self, l, k1, k2):
+
         def integrand(z):
             n_old = (z - self.zmin_Ml)/self.stepsize_Ml
             if abs(n_old-int(n_old)) > 0.5:
@@ -379,9 +381,10 @@ class CosmoCalc(CosmoBasis):
             else:
                 n = int(n_old)
             r = self.r_Ml[n]
-            
+            q = self.q_Ml[n]
+            # Note that we are dividing by the fiducial H(z).
             return r**2 * self.delta_Tb_bar(z) * self.sphbess_camb(l,k1*r) *\
-                    self.sphbess_camb(l,k2*r)  * sqrt(self.Pk_interp(k2,z)/self.h**3) /\
+                    self.sphbess_camb(l,k2*q)  * sqrt(self.Pk_interp(k2,z)/self.h**3) /\
                     self.H(z)
         
         integral = self.integrate_simps(lambda z: integrand(z), self.zmin_Ml, self.zmax_Ml, self.zsteps_Ml)
@@ -389,6 +392,35 @@ class CosmoCalc(CosmoBasis):
         res = self.prefactor_Ml * integral  
         return res
 
+
+    def N_bar(self, l, k1,k2, z_low, z_high):
+        
+        def I(self, l1, l2, k1, k2, z, r, q):
+            res = sqrt(self.Pk_interp(k2,z)/self.h**3) * self.delta_Tb_bar(z) * self.sphbess_camb(l1,k1*r) * self.sphbess_camb(l2,k2*q)         
+            prefactor = 2*self.b_bias*self.c/pi
+        
+            return prefactor * res
+
+        def integrand(z):
+            n_old = (z - self.zmin_Ml)/self.stepsize_Ml
+            if abs(n_old-int(n_old)) > 0.5:
+                n = int(n_old)+1
+            else:
+                n = int(n_old)
+            r = self.r_Ml[n]
+            q = self.q_Ml[n]     
+            pref = 1.0/(self.H(z)*(1.0 + z))
+            sums = k1 * r**2 * I(l-1, l-1, k1, k2, z, r, q) -\
+                   k1 * r**2 * (l+1) / (k2 * q) * I(l-1, l, k1, k2, z, r, q) -\
+                   r * (l+1) * I(l, l-1, k1, k2, z, r, q) +\
+                   r * (l+1)**2 / (k2 * q) * I(l, l, k1, k2, z, r, q)
+            return pref * sums
+        
+        integral = self.integrate_simps(lambda z: integrand(z), z_low, z_high)
+
+        return integral
+    
+       
     #########################################################################
     # Mean Brightness Temperature fluctuations at distance r (comoving) [mK]
     # This does not include the peculiar velocity in form of the velocity gradient, as that 
@@ -401,6 +433,7 @@ class CosmoCalc(CosmoBasis):
 
         return constant_A * x_HI * (T_S - T_g)/T_S * sqrt(1+z)
         #return constant_A * x_HI * sqrt(1+z)
+
     def T_S(self, z):
         Ti = 10.0 #something
         Tf = 500.0 #something
@@ -432,35 +465,18 @@ class CosmoCalc(CosmoBasis):
             res = Td * (1+z)**2/(1+zd)**2 + tanh_term
         
         return res
-       
 
-
-
+    # Method to update q(z)
+    def update_q(self, params):
+        # TODO: this is just an outline of how this should be done, do not call yet!
+        temp_params = self.params
+        self.params = params
         
-    # for included rsd #
-    ######### Separable growth
-    def I(self, l1, l2, k1, k2, z, r):
-        integral = integrate.quad(lambda x: (1+x) / self.E(x)**3, z, np.inf)
-        res = self.delta_Tb_bar(r) * self.sphbess_camb(l1,k1*r) * self.sphbess_camb(l2,k2*r) * integral[0]
+        self.q_Ml = []
+        for n in range(0,self.zsteps_Ml + 1):
+            z = self.zmin_Ml + n * self.stepsize_Ml
+            self.q_Ml.append(self.D_C(z))
 
-        
-        return prefactor * res
-    
-    def N_bar(self, l, k1,k2, z_low, z_high):
-        def integrand(z):
-            r = self.D_C(z)
-            pref = 1.0/(1.0 + z)
-            sums = r**2 * self.I(l-1, l-1, k1, k2, z, r) -\
-                   r * (l+1)/ k1 * self.I(l-1, l, k1, k2, z, r) -\
-                   r * (l+1) / k2 * self.I(l, l-1, k1, k2, z, r) +\
-                   (l+1)**2 / (k1*k2) * self.I(l, l, k1, k2, z, r)
-            return pref * sums
-        
-        B = integrate.quad(lambda x: (1+x) / self.E(x)**3, 0, np.inf)
-        prefactor = 2*self.b_bias*self.c/(B[0]*pi*self.H_0 * 1000.0)
-        integral = self.integrate_simps(lambda z: integrand(z), z_low, z_high)
+        self.params = temp_params
 
-        return prefactor * integral[0]
-
-
-    
+        return None   
