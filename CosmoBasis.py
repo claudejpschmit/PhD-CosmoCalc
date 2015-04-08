@@ -11,7 +11,7 @@ import bessel # This is the python version
 
 class CosmoBasis(object):
     # Initializer fixes constant parameters
-    def __init__(self, params, z_low_integration, z_high_integration, T_CMB):
+    def __init__(self, params, T_CMB):
         
         #### Physical Constants ####
         # Fixing c [m/s]
@@ -73,20 +73,27 @@ class CosmoBasis(object):
         self.h = self.H_0 / 100.0
         # Baryon density
         self.O_b = params["ombh2"] / self.h**2
+        print ("O_b", self.O_b)
         # CDM density
         self.O_cdm = params["omch2"] / self.h**2
+        print ("O_cdm", self.O_cdm)
         # Neutrino density
         self.O_nu = params["omnuh2"] / self.h**2
+        # TODO: IMPORTANT, find out if we should ignore O_R
+        #       or how to include it
         # Fixing the relative radiation density in all cases
         self.O_R = 4.165E-1/self.H_0**2
         # Curvature term
         self.O_k = params["omk"] + self.O_R
+        print ("O_k", self.O_k)
         # Relative Matter density
         self.O_M = self.O_b + self.O_cdm
+        print ("O_M", self.O_M)
         # total Omega
         self.O_tot = 1.0 - self.O_k
         # Relative Vacuum density
         self.O_V = self.O_tot - self.O_M
+        print ("O_V", self.O_V)
         # Hubble distance [Mpc]
         self.D_H = self.c / (1000.0 * self.H_0)
         # Hubble time

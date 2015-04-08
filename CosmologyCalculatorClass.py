@@ -19,7 +19,7 @@ import numpy as np
 class CosmoCalc(CosmoBasis):
    
     def __init__(self, params, z_low_integration, z_high_integration, T_CMB):
-        CosmoBasis.__init__(self, params, z_low_integration, z_high_integration, T_CMB)
+        CosmoBasis.__init__(self, params, T_CMB)
 
         # Creating a list of Comoving distances between z_low & z_high to speed up M_l integration
         # Also creating list of growth functions
@@ -27,15 +27,13 @@ class CosmoCalc(CosmoBasis):
         self.zmax_Ml = z_high_integration
         self.zsteps_Ml = 1000
         self.stepsize_Ml = (self.zmax_Ml - self.zmin_Ml)/float(self.zsteps_Ml)
+        self.Pk_steps = 3
 
         # define the fiducial model r values.
-        self.r_Ml = []
-        for n in range(0,self.zsteps_Ml + 1):
-            z = self.zmin_Ml + n * self.stepsize_Ml
-            self.r_Ml.append(self.D_C(z))
-
-        # We initialize the model to be equal to the fiducial model
-        self.q_Ml = self.r_Ml
+        # We define the q_Ml to start out equal to the fiducial values and then 
+        # set r_Ml to be the fiducial comoving distances as well.
+        self.update_q()
+        self.r_Ml = self.q_Ml
 
         # factor of 1000 in order to get the units right later on
         # ie Ml wil have units [Mpc^3 * Mpc^(3/2) mK]
@@ -47,12 +45,24 @@ class CosmoCalc(CosmoBasis):
         #defining default interpolator
         # This calculates the matter power spectrum in units [h^(-3)Mpc^3]
         #self.Pk_interp = self.Pk_update_interpolator(self.params, self.zmin_Ml, self.zmax_Ml, 3)
-        self.Pk_update_interpolator(self.fiducial_params, self.zmin_Ml, self.zmax_Ml, 3)
+        self.Pk_update_interpolator(self.fiducial_params)
 
         # Let's user know that initialisation is done
         print "CosmoCalc initialized"
 
 #############################################################################
+
+    # Method to update q(z), using the current parameters in the Calculator.
+    def update_q(self):
+        # This function has to be called after updating the parameters.
+               
+        self.q_Ml = []
+        for n in range(0,self.zsteps_Ml + 1):
+            z = self.zmin_Ml + n * self.stepsize_Ml
+            self.q_Ml.append(self.D_C(z))
+
+        return None 
+    
     # Hubble Time [s * Mpc/km]: 
     #   t_H = 1/H_0
     def hubble_time(self):
@@ -72,7 +82,6 @@ class CosmoCalc(CosmoBasis):
         return self.comoving_radial_dist(z)
     def D_now(self, z):
         return self.comoving_radial_dist(z)
-
 
     # Comoving distance (transverse) [Mpc],
     #   aka. Proper motion distance:
@@ -215,10 +224,14 @@ class CosmoCalc(CosmoBasis):
     # This function takes a set of Cosmological parameters and uses CAMB 
     # to compute the Power spectrum for those. The results are then used to update the interpolation
     # function for the power spectrum P(k,z).
-    def Pk_update_interpolator(self, params, zi, zf, nsteps):
-        z_stepsize = float(zf-zi)/float(nsteps)
+    def Pk_update_interpolator(self, params):
         table = []
         table_z = []
+        zi = self.zmin_Ml
+        zf = self.zmax_Ml
+        nsteps = self.Pk_steps
+        z_stepsize = float(zf-zi)/float(nsteps)
+
         for n in range(0, nsteps + 1):
             # create array with all z values
             z = zi + n * z_stepsize
@@ -249,27 +262,6 @@ class CosmoCalc(CosmoBasis):
         self.Pk_interp = interpolate.interp2d(table_k, table_z, table_Pkz, kind = 'cubic')
 
         return None
-
-     
-             
-# def P_interp(self, k, z):
-#        f = interpolate.i
-#    # Matter Power spectrum from CAMB
-#    # TODO: is there a better way to do this?
-#    def camb_P_interp(self, k):
-#        n = 0
-#        kcamb = self.Pk_table[n][0]
-#        while (kcamb < k):
-#            n += 1
-#            kcamb = self.Pk_table[n][0]
-#        n -= 1
-#        y0 = self.Pk_table[n][1]
-#        y1 = self.Pk_table[n+1][1]
-#        x0 = self.Pk_table[n][0]
-#        x1 = self.Pk_table[n+1][0]
-#        
-#        res = (y1-y0)*(k-x0)/(x1-x0) + y0
-#        return res
 
     # ## The following defines methods to calculate the Power Spectrum from scratch ##
     def Pkz_calc(self, k, z):
@@ -349,7 +341,7 @@ class CosmoCalc(CosmoBasis):
                     self.M(l, k1, k) *\
                     self.M(l, k2, k), k_low, k_high, 1000)
         return integral
-
+    
     ############### Then, we include redshift space distortions #########
    
     # Calculates the Tb correlation with redshift space distortions 
@@ -360,13 +352,16 @@ class CosmoCalc(CosmoBasis):
         def integrand(k):
             res = k**2 *  self.P_delta(k, units_k = 'mpc-1', units_P = 'mpc3') *\
                    (self.M(l, k1, k) * self.M(l, k2, k) +\
-                   self.bias * self.beta * (self.M(l, k1, k) * self.N_bar(l, k2, k) +\
+                   self.b_bias * self.beta * (self.M(l, k1, k) * self.N_bar(l, k2, k) +\
                    self.N_bar(l, k1, k) * self.M(l, k2, k)) +\
-                   self.bias**2 * self.beta**2 * self.N_bar(l, k1, k) * self.N_bar(l, k2, k))
+                   self.b_bias**2 * self.beta**2 * self.N_bar(l, k1, k) * self.N_bar(l, k2, k))
             return res
 
         integral = self.integrate_simps(lambda k: integrand(k), k_low, k_high, 1000)
         return integral
+
+    def Cl(self, l, k1, k2, k_low, k_high):
+        return self.corr_Tb_rsd(l, k1, k2, k_low, k_high)
 
     ########################################################################
     
@@ -393,9 +388,9 @@ class CosmoCalc(CosmoBasis):
         return res
 
 
-    def N_bar(self, l, k1,k2, z_low, z_high):
+    def N_bar(self, l, k1,k2):
         
-        def I(self, l1, l2, k1, k2, z, r, q):
+        def I(l1, l2, k1, k2, z, r, q):
             res = sqrt(self.Pk_interp(k2,z)/self.h**3) * self.delta_Tb_bar(z) * self.sphbess_camb(l1,k1*r) * self.sphbess_camb(l2,k2*q)         
             prefactor = 2*self.b_bias*self.c/pi
         
@@ -416,7 +411,7 @@ class CosmoCalc(CosmoBasis):
                    r * (l+1)**2 / (k2 * q) * I(l, l, k1, k2, z, r, q)
             return pref * sums
         
-        integral = self.integrate_simps(lambda z: integrand(z), z_low, z_high)
+        integral = self.integrate_simps(lambda z: integrand(z), self.zmin_Ml, self.zmax_Ml, self.zsteps_Ml)
 
         return integral
     
@@ -466,17 +461,4 @@ class CosmoCalc(CosmoBasis):
         
         return res
 
-    # Method to update q(z)
-    def update_q(self, params):
-        # TODO: this is just an outline of how this should be done, do not call yet!
-        temp_params = self.params
-        self.params = params
-        
-        self.q_Ml = []
-        for n in range(0,self.zsteps_Ml + 1):
-            z = self.zmin_Ml + n * self.stepsize_Ml
-            self.q_Ml.append(self.D_C(z))
-
-        self.params = temp_params
-
-        return None   
+      

@@ -53,7 +53,7 @@ args = parser.parse_args()
 ################# Output ################## 
 # generate parameters
 h = args.H_0 / 100.0
-ombh2 = args.O_b / h**2
+ombh2 = args.O_b * h**2
 omch2 = (args.O_M - args.O_b) * h**2
 omk = 1.0 - args.O_M - args.O_V
 omnuh2 = 0.00064
