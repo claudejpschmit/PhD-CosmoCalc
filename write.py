@@ -45,8 +45,6 @@ parser.add_argument('--z_low', metavar = 'z_low',
         type = float, default = 7, help = 'lower bound for z integration, default is z_low = 7')
 parser.add_argument('--z_high', metavar = 'z_high', 
         type = float, default = 9, help = 'top bound for z integration, default is z_high = 9')
-parser.add_argument('--method', metavar = 'method', 
-        type = int, default = 2, help = 'Integration method, either 0 for scipy or 1 for mp or 2 for simpson, default is method = 2')
 
 args = parser.parse_args()
 
@@ -57,13 +55,9 @@ ombh2 = args.O_b * h**2
 omch2 = (args.O_M - args.O_b) * h**2
 omk = 1.0 - args.O_M - args.O_V
 omnuh2 = 0.00064
-params = {"ombh2":ombh2, "omch2":omch2, "omnuh2":omnuh2, "omk":omk, "hubble":args.H_0}
+params = {"ombh2":ombh2, "omch2":omch2, "omnuh2":omnuh2, "omk":omk, "hubble":args.H_0, "zmin":args.z_low, "zmax":args.z_high, "T_CMB":args.T_CMB}
 # initialize writer
-writer = CosmoWrite(params, args.z_low, args.z_high, args.T_CMB)
+writer = CosmoWrite(params)
 
-if args.method == 0:
-    writer.calculate_Ml_scipy(args.l, args.k_fixed, args.k2_low, args.k2_high, args.z_low, args.z_high, args.steps, args.stepsize)
-elif args.method == 1:
-    writer.calculate_Ml_mp(args.l, args.k_fixed, args.k2_low, args.k2_high, args.z_low, args.z_high, args.steps, args.stepsize)
-elif args.method == 2:
-    writer.calculate_Ml(args.l, args.k_fixed, args.k2_low, args.k2_high, args.steps, args.stepsize)
+#writer.calculate_Ml(args.l, args.k_fixed, args.k2_low, args.k2_high, args.steps, args.stepsize)
+writer.calculate_Nl(args.l, args.k_fixed, args.k2_low, args.k2_high, args.steps, args.stepsize)

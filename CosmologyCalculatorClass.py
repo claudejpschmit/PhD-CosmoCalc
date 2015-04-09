@@ -18,16 +18,16 @@ import numpy as np
 
 class CosmoCalc(CosmoBasis):
    
-    def __init__(self, params, z_low_integration, z_high_integration, T_CMB):
-        CosmoBasis.__init__(self, params, T_CMB)
+    def __init__(self, params):
+        CosmoBasis.__init__(self, params)
 
         # Creating a list of Comoving distances between z_low & z_high to speed up M_l integration
         # Also creating list of growth functions
-        self.zmin_Ml = z_low_integration
-        self.zmax_Ml = z_high_integration
-        self.zsteps_Ml = 1000
+        self.zmin_Ml = self.fiducial_params["zmin"]
+        self.zmax_Ml = self.fiducial_params["zmax"]
+        self.zsteps_Ml = self.fiducial_params["zsteps"] 
         self.stepsize_Ml = (self.zmax_Ml - self.zmin_Ml)/float(self.zsteps_Ml)
-        self.Pk_steps = 3
+        self.Pk_steps = self.fiducial_params["Pk_steps"]
 
         # define the fiducial model r values.
         # We define the q_Ml to start out equal to the fiducial values and then 
@@ -37,10 +37,7 @@ class CosmoCalc(CosmoBasis):
 
         # factor of 1000 in order to get the units right later on
         # ie Ml wil have units [Mpc^3 * Mpc^(3/2) mK]
-        self.prefactor_Ml = 2*self.b_bias*self.c/(pi*1000)
-        
-        # store the initial parameters as the fiducial parameters.
-        self.fiducial_params = params
+        self.prefactor_Ml = 2*self.b_bias*self.c/pi
 
         #defining default interpolator
         # This calculates the matter power spectrum in units [h^(-3)Mpc^3]
@@ -224,6 +221,8 @@ class CosmoCalc(CosmoBasis):
     # This function takes a set of Cosmological parameters and uses CAMB 
     # to compute the Power spectrum for those. The results are then used to update the interpolation
     # function for the power spectrum P(k,z).
+    # Important! The resulting function takes input k values in units of [h Mpc^-1] and gives results
+    #   in units of [h^-3 Mpc^3]
     def Pk_update_interpolator(self, params):
         table = []
         table_z = []
@@ -320,7 +319,7 @@ class CosmoCalc(CosmoBasis):
     # BBKS transfer function, Dodelson (7.70)
     def transfer(self, x):
         res = np.log(1 + 0.171 * x) / (0.171 * x)
-        bracket = 1+ 0.284 * x + (1.18 * x)**2 + (0.399 * x)**3 + (0.490 * x)**4
+        bracket = 1 + 0.284 * x + (1.18 * x)**2 + (0.399 * x)**3 + (0.490 * x)**4
         res = res * bracket**(-0.25)
         return res
     
@@ -340,6 +339,7 @@ class CosmoCalc(CosmoBasis):
         integral = self.integrate_simps(lambda k: k**2 *\
                     self.M(l, k1, k) *\
                     self.M(l, k2, k), k_low, k_high, 1000)
+        print("corr_Tb value calculated", integral)
         return integral
     
     ############### Then, we include redshift space distortions #########
@@ -350,11 +350,18 @@ class CosmoCalc(CosmoBasis):
     # This has units [MPc^6 mK^2]
     def corr_Tb_rsd(self, l, k1, k2, k_low, k_high):
         def integrand(k):
-            res = k**2 *  self.P_delta(k, units_k = 'mpc-1', units_P = 'mpc3') *\
-                   (self.M(l, k1, k) * self.M(l, k2, k) +\
-                   self.b_bias * self.beta * (self.M(l, k1, k) * self.N_bar(l, k2, k) +\
-                   self.N_bar(l, k1, k) * self.M(l, k2, k)) +\
-                   self.b_bias**2 * self.beta**2 * self.N_bar(l, k1, k) * self.N_bar(l, k2, k))
+            m1 = self.M(l, k1, k)
+            n1 = self.N_bar(l, k1, k)
+            if k1 == k2:
+                m2 = m1
+                n2 = n1
+            else:
+                m2 = self.M(l, k2, k)
+                n2 = self.N_bar(l, k2, k)
+
+            bb = self.b_bias * self.beta
+            bb2 = bb**2
+            res = k**2 * m1 * m2 + bb * k * (m1 * n2 + n1 * m2) + bb2 * n1 * n2
             return res
 
         integral = self.integrate_simps(lambda k: integrand(k), k_low, k_high, 1000)
@@ -367,6 +374,7 @@ class CosmoCalc(CosmoBasis):
     
     ############### Then we define the M_l and N_l matrices. ###############
 
+    # This computes Ml in units [Mpc^3 * Mpc^{3/2} * mK]
     def M(self, l, k1, k2):
 
         def integrand(z):
@@ -378,24 +386,19 @@ class CosmoCalc(CosmoBasis):
             r = self.r_Ml[n]
             q = self.q_Ml[n]
             # Note that we are dividing by the fiducial H(z).
+            # The factor of 1000 is there to change from km/s/Mpc to m/s/Mpc
             return r**2 * self.delta_Tb_bar(z) * self.sphbess_camb(l,k1*r) *\
-                    self.sphbess_camb(l,k2*q)  * sqrt(self.Pk_interp(k2,z)/self.h**3) /\
-                    self.H(z)
+                    self.sphbess_camb(l,k2*q)  * sqrt(self.Pk_interp(k2*self.h,z)/self.h**3) /\
+                    (self.H(z)*1000.0)
         
         integral = self.integrate_simps(lambda z: integrand(z), self.zmin_Ml, self.zmax_Ml, self.zsteps_Ml)
 
         res = self.prefactor_Ml * integral  
         return res
 
-
+    # This computes Nl_bar in units [Mpc^2 * Mpc^{3/2} * mK]
     def N_bar(self, l, k1,k2):
         
-        def I(l1, l2, k1, k2, z, r, q):
-            res = sqrt(self.Pk_interp(k2,z)/self.h**3) * self.delta_Tb_bar(z) * self.sphbess_camb(l1,k1*r) * self.sphbess_camb(l2,k2*q)         
-            prefactor = 2*self.b_bias*self.c/pi
-        
-            return prefactor * res
-
         def integrand(z):
             n_old = (z - self.zmin_Ml)/self.stepsize_Ml
             if abs(n_old-int(n_old)) > 0.5:
@@ -404,12 +407,25 @@ class CosmoCalc(CosmoBasis):
                 n = int(n_old)
             r = self.r_Ml[n]
             q = self.q_Ml[n]     
-            pref = 1.0/(self.H(z)*(1.0 + z))
-            sums = k1 * r**2 * I(l-1, l-1, k1, k2, z, r, q) -\
-                   k1 * r**2 * (l+1) / (k2 * q) * I(l-1, l, k1, k2, z, r, q) -\
-                   r * (l+1) * I(l, l-1, k1, k2, z, r, q) +\
-                   r * (l+1)**2 / (k2 * q) * I(l, l, k1, k2, z, r, q)
-            return pref * sums
+           
+            # Note that we are dividing by the fiducial H(z).
+            # The factor of 1000 is there to change from km/s/Mpc to m/s/Mpc
+            pref = 1.0/(self.H(z)*1000.0*(1.0 + z)) * self.prefactor_Ml
+
+            pk = sqrt(self.Pk_interp(k2*self.h, z)/self.h**3)
+            dtb = self.delta_Tb_bar(z)
+            pkdtb = pk * dtb
+            jl1r = self.sphbess_camb(l - 1, k1 * r)
+            jl2r = self.sphbess_camb(l, k1 * r)
+            jl1q = self.sphbess_camb(l - 1, k2 * q)
+            jl2q = self.sphbess_camb(l, k2 * q)
+
+            sums = k1 * r * jl1r * jl1q -\
+                   k1 * r * (l+1) / (k2 * q) * jl1r * jl2q -\
+                   (l+1) * jl2r * jl1q +\
+                   (l+1)**2 / (k2 * q) * jl2r * jl2q 
+            
+            return pref * r * pkdtb * sums
         
         integral = self.integrate_simps(lambda z: integrand(z), self.zmin_Ml, self.zmax_Ml, self.zsteps_Ml)
 
@@ -460,5 +476,3 @@ class CosmoCalc(CosmoBasis):
             res = Td * (1+z)**2/(1+zd)**2 + tanh_term
         
         return res
-
-      

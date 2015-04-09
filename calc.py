@@ -53,9 +53,9 @@ ombh2 = args.O_b * h**2
 omch2 = (args.O_M - args.O_b) * h**2
 omk = 1.0 - args.O_M - args.O_V
 omnuh2 = 0.00064
-params = {"ombh2":ombh2, "omch2":omch2, "omnuh2":omnuh2, "omk":omk, "hubble":args.H_0}
+params = {"ombh2":ombh2, "omch2":omch2, "omnuh2":omnuh2, "omk":omk, "hubble":args.H_0, "zmin":args.z_low, "zmax":args.z_high, "T_CMB":args.T_CMB}
 # initialize calculator
-calc = CosmoCalc(params, args.z_low, args.z_high, args.T_CMB)
+calc = CosmoCalc(params)
 
 if not args.p:
     print "\nFor a Universe with H0 = %s, Omega_M = %s, Omega_V = %s, z = %s and T_CMB = %s K:\n" % (calc.H_0, calc.O_M, calc.O_V, z, calc.T_CMB)

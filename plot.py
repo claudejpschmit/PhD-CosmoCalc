@@ -42,22 +42,22 @@ ombh2 = args.O_b * h**2
 omch2 = (args.O_M - args.O_b) * h**2
 omk = 1.0 - args.O_M - args.O_V
 omnuh2 = 0.00064
-params = {"ombh2":ombh2, "omch2":omch2, "omnuh2":omnuh2, "omk":omk, "hubble":args.H_0}
+params = {"ombh2":ombh2, "omch2":omch2, "omnuh2":omnuh2, "omk":omk, "hubble":args.H_0, "zmin":args.z_low, "zmax":args.z_high, "T_CMB":args.T_CMB}
 # initialize plotter
-plotter = CosmoPlot(params, args.z_low, args.z_high, args.T_CMB)
+plotter = CosmoPlot(params)
 
 
-#plotter.plot_dTb(5, 20,100)
+plotter.plot_dTb(5, 20,100)
 #plotter.plot_xHI(0, 20, 100)
 #plotter.plot_Ts(0,20,100)
 #plotter.plot_Tk(0,1000,1000)
 #plotter.plot_P_camb(0.001, 10, 10000)
-plotter.plot_distances()
+#plotter.plot_distances()
 #plotter.plot_bessel(200)
 #plotter.plot_bessel(2000)
 #plotter.plot_densities_rho(5000, 100)
 #plotter.plot_densities_Omega(10000, 100)
-plotter.plot_H(1000, 100)
+#plotter.plot_H(1000, 100)
 #plotter.plot_x_HI(50, 100)
 #plotter.plot_kappa_HH(1, 1000, 1000)
 #plotter.plot_kappa_Hp(1, 20000, 1000)

@@ -1,34 +1,38 @@
 from CosmologyCalculatorClass import CosmoCalc
 
 class Fisher(object):
-    def __init__(self, params, z_low_integration, z_high_integration, T_CMB):
+    def __init__(self, params):
         
         # setup the working calculator object.
-        self.calc = CosmoCalc(params, z_low_integration, z_high_integration, T_CMB)
+        self.calc = CosmoCalc(params)
         
         # defining initial parameters.
-        self.params = params
-        self.fiducial_params = params
+        self.params = self.calc.fiducial_params
+        self.fiducial_params = self.calc.fiducial_params
         # defining parameter variation matrix
         # This determines by how much each parameter will be varied during each step.
         self.var_params = {}
-        for key in params:
+        self.model_params_keys = ["ombh2", "omch2", "omnuh2", "omk", "hubble"]
+        for key in self.model_params_keys:
             # varying parameters by 1% of the fiducial value
-            self.var_params[key] = params[key]/100.0
+            if self.params[key] == 0.0:
+                self.var_params[key] = 0.0001
+            else:
+                self.var_params[key] = self.params[key]/100.0
 
         self.Cl = []
         self.Cl_inv = []
 
-        self.kmin = 1
-        self.kmax = 10
-        ksteps = 1
-        kstepsize = (self.kmax - self.kmin)/ksteps
+        self.kmin = 0.001
+        self.kmax = 5
+        ksteps = 100
+        kstepsize = (self.kmax - self.kmin)/float(ksteps)
         self.krange = []
         for n in range(0,ksteps+1):
             self.krange.append(self.kmin + n * kstepsize)
-        print("K range", self.krange)
         print "Fisher initialized"
-    def __call__(self, param1, param2):
+    
+    def __call__(self, param_key1, param_key2):
         '''
         while (index = something):
                 # generate new parameters for the run
@@ -66,18 +70,53 @@ class Fisher(object):
             row = []
             for k2 in self.krange:
                 row.append(self.calc.Cl(l, k1, k2, self.kmin, self.kmax))
-            self.Cl.append(row)
-        
+            self.Cl.append(row) 
         return None
+    
     def compute_Cl_inv(self):
         self.Cl_inv = np.linalg.inv(self.Cl)
         return None
-
-    def Cl_derivative_matrix(self, l, param_index):
+    
+    # This calculates a single matrix element of the derivative matrix.
+    def Cl_derivative(self, l, param_key, k1, k2):
         
-        h = self.var_params[param_index]
+        h = self.var_params[param_key]
+        print ("calculation with h = ",h)
         # storing the original parameter
-        x = self.params[param_index]
+        x = self.params[param_key]
+
+        self.params[param_key] = x + 2*h
+        self.update_Model(self.params)
+        f1 = self.calc.Cl(l, k1, k2, self.kmin, self.kmax)           
+        
+        self.params[param_key] = x + h
+        self.update_Model(self.params)
+        f2 = self.calc.Cl(l, k1, k2, self.kmin, self.kmax)
+
+        self.params[param_key] = x - h
+        self.update_Model(self.params)
+        f3 = self.calc.Cl(l, k1, k2, self.kmin, self.kmax)
+
+        self.params[param_key] = x - 2*h
+        self.update_Model(self.params)
+        f4 = self.calc.Cl(l, k1, k2, self.kmin, self.kmax)
+
+        # reset the model to what it was before. This may not be necessary depending
+        # on how the program will later operate.
+        self.params[param_key] = x
+        #self.update_Model(self.params)
+
+        # actually calculating the derivative matrix
+        num = -f1 + 8 * f2 - 8 * f3 + f4
+        result =  num / (12.0 * h)
+
+        return result
+
+    def Cl_derivative_matrix(self, l, param_key):
+        
+        h = self.var_params[param_key]
+        # storing the original parameter
+        x = self.params[param_key]
 
         # here we're generating f(x+2h) etc matrices for the various kvalues.
         f1matrix = []
@@ -85,7 +124,7 @@ class Fisher(object):
         f3matrix = []
         f4matrix = []
 
-        self.params[param_index] = x + 2*h
+        self.params[param_key] = x + 2*h
         self.update_Model(self.params)
         for k1 in self.krange:
             row = []
@@ -93,7 +132,7 @@ class Fisher(object):
                 row.append(self.calc.Cl(l, k1, k2, self.kmin, self.kmax))
             f1matrix.append(row)
         
-        self.params[param_index] = x + h
+        self.params[param_key] = x + h
         self.update_Model(self.params)
         for k1 in self.krange:
             row = []
@@ -101,7 +140,7 @@ class Fisher(object):
                 row.append(self.calc.Cl(l, k1, k2, self.kmin, self.kmax))
             f2matrix.append(row)
         
-        self.params[param_index] = x - h
+        self.params[param_key] = x - h
         self.update_Model(self.params)
         for k1 in self.krange:
             row = []
@@ -109,7 +148,7 @@ class Fisher(object):
                 row.append(self.calc.Cl(l, k1, k2, self.kmin, self.kmax))
             f3matrix.append(row)
         
-        self.params[param_index] = x - 2*h
+        self.params[param_key] = x - 2*h
         self.update_Model(self.params)
         for k1 in self.krange:
             row = []
@@ -119,7 +158,7 @@ class Fisher(object):
         
         # reset the model to what it was before. This may not be necessary depending
         # on how the program will later operate.
-        self.params[param_index] = x
+        self.params[param_key] = x
         self.update_Model(self.params)
 
         # actually calculating the derivative matrix
@@ -138,9 +177,9 @@ class Fisher(object):
         return res
 
     # computes matrix element for Fl wrt 2 parameter names.
-    def compute_Fl(self, l, param_index1, param_index2):
-        Cl_alpha = self.Cl_derivative_matrix(l,param_index1)
-        Cl_beta = self.Cl_derivative_matrix(l,param_index2)
+    def compute_Fl(self, l, param_key1, param_key2):
+        Cl_alpha = self.Cl_derivative_matrix(l,param_key1)
+        Cl_beta = self.Cl_derivative_matrix(l,param_key2)
 
         # The inverse has to be calculated only once!! Put it somewhere else.
         #Cl_inverse = np.inv(self.Cl_matrix)
@@ -152,12 +191,12 @@ class Fisher(object):
         return 0.5 * np.trace(product)
         
     # this function returns a Fisher matrix element. F(param1, param2)
-    def F(self, param1, param2):
+    def F(self, param_key1, param_key2):
         lmax = 1
         sum = 0
         for l in range(0,lmax + 1):
             self.compute_Cl(l)
             self.compute_Cl_inv(l)
-            sum += (2 * l + 1) * self.compute_Fl(l, param1, param2)
+            sum += (2 * l + 1) * self.compute_Fl(l, param_key1, param_key2)
         return sum
 

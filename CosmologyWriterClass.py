@@ -32,45 +32,25 @@ class CosmoWrite(CosmoCalc):
             f.write(str(k2)+" "+res+"\n")
             f.close()
 
-    def calculate_Ml_scipy(self, l, k_fixed, k2_low, k2_high, z_low, z_high, step, stepsize = 0):
+    def calculate_Nl(self, l, k_fixed, k2_low, k2_high, step, stepsize = 0):
+
         if stepsize == 0:
             stepsize = (k2_high - k2_low) / float(step)
         else:
             step = int((k2_high - k2_low) / stepsize)
+
         
         dir_path = 'output/'
         if not os.path.isdir(dir_path):
             os.makedirs(dir_path)
-
-        filename = 'M_scipy_'+str(int(l))+'('+str(k_fixed)+',['+str(k2_low)+','+str(k2_high)+']).'+str(step)+'steps.dat'
+        
+        filename = 'N_'+str(int(l))+'('+str(k_fixed)+',['+str(k2_low)+','+str(k2_high)+']).'+str(step)+'steps.dat'
         x = [k2_low + float(i) * stepsize for i in range(0, step)]
         g = open(os.path.join(dir_path, filename), 'w')
         g.close()
         
         for k2 in x:
-            res = str(self.M_scipy(l, k_fixed, k2, z_low, z_high))
-            f = open(os.path.join(dir_path, filename), 'a')
-            f.write(str(k2)+" "+res+"\n")
-            f.close()  
-
-    def calculate_Ml_mp(self, l, k_fixed, k2_low, k2_high, z_low, z_high, step, stepsize = 0):
-        if stepsize == 0:
-            stepsize = (k2_high - k2_low) / float(step)
-        else:
-            step = int((k2_high - k2_low) / stepsize)
-        
-        dir_path = 'output/'
-        if not os.path.isdir(dir_path):
-            os.makedirs(dir_path)
-            
-        filename = 'M_mp_'+str(int(l))+'('+str(k_fixed)+',['+str(k2_low)+','+str(k2_high)+']).'+str(step)+'steps.dat'
-        stepsize = (k2_high - k2_low) / float(step)
-        x = [k2_low + float(i) * stepsize for i in range(0, step)]
-        g = open(os.path.join(dir_path, filename), 'w')
-        g.close()
-        
-        for k2 in x:
-            res = str(self.M_mp(l, k_fixed, k2, z_low, z_high))
+            res = str(self.N_bar(l, k_fixed, k2))
             f = open(os.path.join(dir_path, filename), 'a')
             f.write(str(k2)+" "+res+"\n")
             f.close()
