@@ -47,14 +47,13 @@ params = {"ombh2":ombh2, "omch2":omch2, "omnuh2":omnuh2, "omk":omk, "hubble":arg
 plotter = CosmoPlot(params)
 
 
-plotter.plot_dTb(5, 20,100)
+#plotter.plot_dTb(5, 20,100)
 #plotter.plot_xHI(0, 20, 100)
 #plotter.plot_Ts(0,20,100)
 #plotter.plot_Tk(0,1000,1000)
 #plotter.plot_P_camb(0.001, 10, 10000)
 #plotter.plot_distances()
-#plotter.plot_bessel(200)
-#plotter.plot_bessel(2000)
+plotter.plot_bessel_camb(1, 0, 100, 0.1)
 #plotter.plot_densities_rho(5000, 100)
 #plotter.plot_densities_Omega(10000, 100)
 #plotter.plot_H(1000, 100)

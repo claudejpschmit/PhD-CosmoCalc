@@ -80,13 +80,13 @@ if not args.p:
     
     print "#################################"
     
-    print calc.corr_Tb(10, 0.1, 0.2, 0.01, 1)
     #print calc.M_mp(3, 0.01, 1.0, 7, 9)
     #print calc.D_C(args.z_low)
     #print calc.D_C(args.z_high)
     #print calc.M_scipy(3, 0.01, 1.0, 7, 9)
-    #print calc.sphbess_camb(3000,10000)
+    print calc.sphbess_camb(3000,10000)
 
+    print calc.corr_Tb(10, 0.1, 0.2, 0.01, 1)
 else:
     profile.run('calc.corr_Tb(10, 0.1, 0.2, 0.01, 1)', filename="Tb.profile")
     #profile.run('calc.M(3, 0.1, 1.0, 7, 9)', filename="interpol.profile")

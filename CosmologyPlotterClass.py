@@ -139,6 +139,7 @@ class CosmoPlot(CosmoCalc):
         nsteps = int((xmax-xmin)/float(stepsize))
         x = [xmin + n*stepsize for n in range(0, nsteps)]
         y = [self.sphbess_camb(l,x1) for x1 in x]
+
         plot1 = plt.plot(x, y, label = r'$j_l(x)$')
         
         plt.legend(loc = 'upper left')

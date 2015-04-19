@@ -156,10 +156,11 @@ class Fisher(object):
                 row.append(self.calc.Cl(l, k1, k2, self.kmin, self.kmax))
             f4matrix.append(row)
         
-        # reset the model to what it was before. This may not be necessary depending
-        # on how the program will later operate.
+        # reset the parameter to what it was before. 
+        # Updating the model may not be necessary as this is done at the beginning
+        # of this routine anyways.
         self.params[param_key] = x
-        self.update_Model(self.params)
+        #self.update_Model(self.params)
 
         # actually calculating the derivative matrix
         res = []
@@ -179,14 +180,17 @@ class Fisher(object):
     # computes matrix element for Fl wrt 2 parameter names.
     def compute_Fl(self, l, param_key1, param_key2):
         Cl_alpha = self.Cl_derivative_matrix(l,param_key1)
-        Cl_beta = self.Cl_derivative_matrix(l,param_key2)
-
-        # The inverse has to be calculated only once!! Put it somewhere else.
-        #Cl_inverse = np.inv(self.Cl_matrix)
+        if param_key1 == param_key2:
+            Cl_beta = Cl_alpha
+        else:
+            Cl_beta = self.Cl_derivative_matrix(l,param_key2)
         
-        product = np.dot(Cl_alpha, self.Cl_inverse)
+        self.compute_Cl(l)
+        self.compute_Cl_inv()
+        
+        product = np.dot(Cl_alpha, self.Cl_inv)
         product = np.dot(product, Cl_beta)
-        product = np.dot(product, self.Cl_inverse)
+        product = np.dot(product, self.Cl_inv)
 
         return 0.5 * np.trace(product)
         
@@ -195,8 +199,6 @@ class Fisher(object):
         lmax = 1
         sum = 0
         for l in range(0,lmax + 1):
-            self.compute_Cl(l)
-            self.compute_Cl_inv(l)
             sum += (2 * l + 1) * self.compute_Fl(l, param_key1, param_key2)
         return sum
 

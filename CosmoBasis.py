@@ -153,8 +153,8 @@ class CosmoBasis(object):
     # If for some reason f2py is not working, then comment first line here and uncomment second.
     # This will use a Python translation of the Fortran code, but this is slower!
     def sphbess_camb(self, l, x):
-        return bessels.bjl(l, x)
-        #return bessel.bjl(l, x)
+        #return bessels.bjl(l, x)
+        return bessel.bjl(l, x)
 
     # Helper function, denominator for various integrals
     # E(z) = H(z)/H_0 
