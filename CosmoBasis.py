@@ -90,7 +90,7 @@ class CosmoBasis(object):
         # Curvature term
         self.O_k = params["omk"] + self.O_R
         # Relative Matter density
-        self.O_M = self.O_b + self.O_cdm
+        self.O_M = self.O_b + self.O_cdm + self.O_nu
         # total Omega
         self.O_tot = 1.0 - self.O_k
         # Relative Vacuum density
@@ -99,7 +99,6 @@ class CosmoBasis(object):
         self.D_H = self.c / (1000.0 * self.H_0)
         # Hubble time
         self.t_H = 1.0 / self.H_0
-        
         
         return None
     

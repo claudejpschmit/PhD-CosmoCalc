@@ -1,3 +1,5 @@
+
+from math import *
 from CosmologyCalculatorClass import CosmoCalc
 
 class Fisher(object):
@@ -112,6 +114,43 @@ class Fisher(object):
 
         return result
 
+    # This calculates a single matrix element of the derivative matrix.
+    def Cl_loglog_derivative(self, l, param_key, k1, k2):
+        
+        h = self.var_params[param_key]
+        print ("calculation with h = ",h)
+        # storing the original parameter
+        x = self.params[param_key]
+
+        self.params[param_key] = x + 2*h
+        self.update_Model(self.params)
+        f1 = log(self.calc.Cl(l, k1, k2, self.kmin, self.kmax))           
+        
+        self.params[param_key] = x + h
+        self.update_Model(self.params)
+        f2 = log(self.calc.Cl(l, k1, k2, self.kmin, self.kmax))
+
+        self.params[param_key] = x - h
+        self.update_Model(self.params)
+        f3 = log(self.calc.Cl(l, k1, k2, self.kmin, self.kmax))
+
+        self.params[param_key] = x - 2*h
+        self.update_Model(self.params)
+        f4 = log(self.calc.Cl(l, k1, k2, self.kmin, self.kmax))
+
+        # reset the model to what it was before. This may not be necessary depending
+        # on how the program will later operate.
+        self.params[param_key] = x
+        #self.update_Model(self.params)
+
+        # actually calculating the derivative matrix
+        num = -f1 + 8 * f2 - 8 * f3 + f4
+        result =  num / (12.0 * h)
+
+        return x*result
+
+
+
     def Cl_derivative_matrix(self, l, param_key):
         
         h = self.var_params[param_key]
@@ -159,8 +198,10 @@ class Fisher(object):
         # reset the parameter to what it was before. 
         # Updating the model may not be necessary as this is done at the beginning
         # of this routine anyways.
+        # Edit: Updating the model to a past model should be very cheap now, so
+        #       one might as well just do it.
         self.params[param_key] = x
-        #self.update_Model(self.params)
+        self.update_Model(self.params)
 
         # actually calculating the derivative matrix
         res = []

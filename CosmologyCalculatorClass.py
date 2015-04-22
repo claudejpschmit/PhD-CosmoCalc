@@ -15,6 +15,7 @@ from math import *
 import scipy.integrate as integrate
 import scipy.interpolate as interpolate
 import numpy as np
+from sys import getsizeof
 
 class CosmoCalc(CosmoBasis):
    
@@ -39,6 +40,12 @@ class CosmoCalc(CosmoBasis):
         # ie Ml wil have units [Mpc^3 * Mpc^(3/2) mK]
         self.prefactor_Ml = 2*self.b_bias*self.c/pi
 
+        # Initialize a list of parameters that have already been used. 
+        # Also, initialise a list of PK interpolator functions.
+        # The index should relate both lists.
+        self.Pk_params_used = []
+        self.Pk_interpolators_used = []
+        
         #defining default interpolator
         # This calculates the matter power spectrum in units [h^(-3)Mpc^3]
         #self.Pk_interp = self.Pk_update_interpolator(self.params, self.zmin_Ml, self.zmax_Ml, 3)
@@ -224,41 +231,75 @@ class CosmoCalc(CosmoBasis):
     # Important! The resulting function takes input k values in units of [h Mpc^-1] and gives results
     #   in units of [h^-3 Mpc^3]
     def Pk_update_interpolator(self, params):
-        table = []
-        table_z = []
-        zi = self.zmin_Ml
-        zf = self.zmax_Ml
-        nsteps = self.Pk_steps
-        z_stepsize = float(zf-zi)/float(nsteps)
 
-        for n in range(0, nsteps + 1):
-            # create array with all z values
-            z = zi + n * z_stepsize
-            table_z.append(z)
-
-            # generate p(k,z) from camb
-            camb_result_dict = self.camb(**{'ombh2':params["ombh2"], 'omch2':params["omch2"],\
-                    'omnuh2':params["omnuh2"], 'omk':params["omk"], 'hubble':params["hubble"],\
-                    'transfer_redshift(1)':z})
-            res = camb_result_dict["transfer_matterpower"]
-           
-            table.append(res)
+        #loop through a list of all sets of parameters used thus far
+        #if the set of parameters has already been used, set f to the 
+        #associated interpolation function. If not, calculate new
+        #function and add it to the list of interpolated functions and return it.
+        #also add the set of parameters to the list of used parameters.
         
-        #number of kvalues
-        nkvals = len(table[0])
-        table_k = []
-        for n in range(0,nkvals):
-            #store all kvalues into table_k
-            table_k.append(table[0][n][0])
+        # This function now includes optimization so to avoid unecessary
+        # CAMB calls for parameter values that have already been calculated in the past.
+        
+        index = 0
+        while (index <= len(self.Pk_params_used) - 1):
+            if (self.Pk_params_used[index] != params):
+                index += 1
+            else:
+                break
+       
+        if index == len(self.Pk_params_used):
+            #add new Pk interpolator
+            table = []
+            table_z = []
+            zi = self.zmin_Ml
+            zf = self.zmax_Ml
+            nsteps = self.Pk_steps
+            z_stepsize = float(zf-zi)/float(nsteps)
 
-        table_Pkz = []
-        for m in range(0,nsteps+1):
-            row = []
+            for n in range(0, nsteps + 1):
+                # create array with all z values
+                z = zi + n * z_stepsize
+                table_z.append(z)
+
+                # generate p(k,z) from camb
+                camb_result_dict = self.camb(**{'ombh2':params["ombh2"], 'omch2':params["omch2"],\
+                        'omnuh2':params["omnuh2"], 'omk':params["omk"], 'hubble':params["hubble"],\
+                        'transfer_redshift(1)':z})
+                res = camb_result_dict["transfer_matterpower"]
+           
+                table.append(res)
+        
+            #number of kvalues
+            nkvals = len(table[0])
+            table_k = []
             for n in range(0,nkvals):
-                row.append(table[m][n][1])
-            table_Pkz.append(row)
+                #store all kvalues into table_k
+                table_k.append(table[0][n][0])
 
-        self.Pk_interp = interpolate.interp2d(table_k, table_z, table_Pkz, kind = 'cubic')
+            table_Pkz = []
+            for m in range(0,nsteps+1):
+                row = []
+                for n in range(0,nkvals):
+                    row.append(table[m][n][1])
+                table_Pkz.append(row)
+
+            f = interpolate.interp2d(table_k, table_z, table_Pkz, kind = 'cubic')
+           
+            # Now the parameters and associated interpolation function are stored 
+            # for later use. This should not be a memory problem, one such function
+            # has a size of 64bytes.
+            self.Pk_params_used.append(params)
+            self.Pk_interpolators_used.append(f)
+        else:
+            f = self.Pk_interpolators_used[index]
+
+
+
+        # finally set the interpolator to what we need.
+
+        self.Pk_interp = f
+        #self.Pk_interp = interpolate.interp2d(table_k, table_z, table_Pkz, kind = 'cubic')
 
         return None
 
@@ -321,9 +362,7 @@ class CosmoCalc(CosmoBasis):
         res = np.log(1 + 0.171 * x) / (0.171 * x)
         bracket = 1 + 0.284 * x + (1.18 * x)**2 + (0.399 * x)**3 + (0.490 * x)**4
         res = res * bracket**(-0.25)
-        return res
-    
-    
+        return res 
 
     ####################################################################
     ####### Two point Correlation of brightness tem. fluctuations ######
