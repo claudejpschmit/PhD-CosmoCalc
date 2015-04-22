@@ -91,9 +91,12 @@ class CosmoCalc(CosmoBasis):
     #   aka. Proper motion distance:
     #   D_M = D_H/sqrt(1-O_tot) S_k(sqrt(1-O_tot) D_C/D_H)
     def comoving_dist_transverse(self, z):
-        O_k = 1-self.O_M-self.O_V
-        return self.D_H / sqrt(abs(1-O_k)) * \
-                self.S_k(sqrt(abs(1-O_k)) * \
+        #O_k = 1-self.O_M-self.O_V
+        if (self.O_k == 0.0):
+            return self.D_C(z)
+        else:
+            return self.D_H / sqrt(abs(self.O_k)) * \
+                self.S_k(sqrt(abs(self.O_k)) * \
                 self.D_C(z)/self.D_H)
     def D_M(self, z):
         return self.comoving_dist_transverse(z)
@@ -107,13 +110,16 @@ class CosmoCalc(CosmoBasis):
     #   D_A12 = 1/(1+z_2) * (D_M2 sqrt(1+(1-O_tot) D_M1^2/D_H^2) -
     #                       D_M1 sqrt(1+(1-O_tot) D_M2^2/D_H^2) )
     def angular_diam_dist(self, z, z2 = None):
-        O_k = 1-self.O_M-self.O_V
+        #O_k = 1-self.O_M-self.O_V
         root = sqrt(abs(self.O_k))
         
         if z2 is None:
-            return self.D_H * self.S_k((root) * self.Z(z))/ \
+            if (self.O_tot == 1.0):
+                return self.D_H  * self.Z(z)/ (1+z)
+            else:
+                return self.D_H * self.S_k((root) * self.Z(z))/ \
                     ((1+z) * root)
-        elif (self.O_V + self.O_M <= 1.0):
+        elif (self.O_tot <= 1.0):
             return 1.0 / (1.0 + z2) * \
                     ( self.D_M(z2) * (1 + sqrt(1 - O_k) *\
                     self.D_M(z)**2 / self.D_H**2) - \

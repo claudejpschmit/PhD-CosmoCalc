@@ -86,15 +86,16 @@ class CosmoBasis(object):
         # TODO: IMPORTANT, find out if we should ignore O_R
         #       or how to include it
         # Fixing the relative radiation density in all cases
-        self.O_R = 4.165E-1/self.H_0**2
+        self.O_R = params["omrH02"]/self.H_0**2
         # Curvature term
-        self.O_k = params["omk"] + self.O_R
+        self.O_k = params["omk"] #+ self.O_R
         # Relative Matter density
         self.O_M = self.O_b + self.O_cdm + self.O_nu
         # total Omega
-        self.O_tot = 1.0 - self.O_k
+        self.O_tot = 1 - self.O_k
         # Relative Vacuum density
-        self.O_V = self.O_tot - self.O_M
+        # This is now calculated rather than set...
+        self.O_V = self.O_tot - self.O_M - self.O_R
         # Hubble distance [Mpc]
         self.D_H = self.c / (1000.0 * self.H_0)
         # Hubble time
@@ -169,9 +170,9 @@ class CosmoBasis(object):
     # Curvature term in the metric:
     #   sinh x, x or sin x 
     def S_k(self, x):
-        if (self.O_V + self.O_M < 1.0):
+        if (self.O_tot < 1.0):
             return sinh(x) 
-        elif (self.O_V + self.O_M == 1.0):
+        elif (self.O_tot == 1.0):
             return x
         else:
             return sin(x)

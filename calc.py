@@ -23,8 +23,6 @@ parser.add_argument('--H_0', metavar = 'H_0',
         help = 'Hubble Constant [km/s/Mpc], default is H_0 = 70.0')
 parser.add_argument('--O_M', metavar = 'O_M', 
         type = float, default = 0.3, help = 'Matter density, default is O_M = 0.3')
-parser.add_argument('--O_V', metavar = 'O_V', 
-        type = float, default = 0.7, help = 'Vacuum density, default is O_V = 0.7')
 parser.add_argument('--O_b', metavar = 'O_b',
         type = float, default = 0.046, help = 'Baryon density, default is O_b = 0.046')
 parser.add_argument('--z', metavar = 'z', 
@@ -49,11 +47,12 @@ def convert_to_gy(age):
 
 # generate parameters
 h = args.H_0 / 100.0
-ombh2 = args.O_b * h**2
-omch2 = (args.O_M - args.O_b) * h**2
-omk = 1.0 - args.O_M - args.O_V
 omnuh2 = 0.00064
-params = {"ombh2":ombh2, "omch2":omch2, "omnuh2":omnuh2, "omk":omk, "hubble":args.H_0, "zmin":args.z_low, "zmax":args.z_high, "T_CMB":args.T_CMB}
+ombh2 = args.O_b * h**2
+omch2 = (args.O_M - args.O_b) * h**2 - omnuh2
+omk = 0.1
+omrH02 = 4.165E-1
+params = {"ombh2":ombh2, "omch2":omch2, "omnuh2":omnuh2, "omk":omk, "hubble":args.H_0, "zmin":args.z_low, "zmax":args.z_high, "T_CMB":args.T_CMB, "omrH02":omrH02}
 # initialize calculator
 calc = CosmoCalc(params)
 
