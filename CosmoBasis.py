@@ -40,10 +40,7 @@ class CosmoBasis(object):
         # generates useful parameters from input
         self.generate_params(self.fiducial_params)
         
-        # CMB temperature [K]
-        self.T_CMB = self.fiducial_params["T_CMB"]
-        # T_gamma is usually set to T_CMB [K]
-        self.T_gamma = self.T_CMB 
+         
         # Spontaneous decay-rate of the spin-flip transition [s^-1]
         self.A_10 = 2.85 * 10**(-15)
         # Logarithmic tilt of the the spectrum of fluctuations
@@ -72,7 +69,21 @@ class CosmoBasis(object):
 
     # This function takes the list of cosmological parameters and translates them to parameters
     # which will be used directly in Cosmological computations.
+
+    # Note on neutrinos:
+    # Here we add the neutrino density to the matter density as well as to the radiation density. 
+    # For high redshift, neutrinos are relativistic and add to the radiation density, also at 
+    # high redshifts, radiation is dominating so having the neutrinos in has a great effect,
+    # since O_nu is of the same order as O_gamma.
+    # At late times O_R becomes very unimportant so adding O_nu in has a very minor effect.
+    # As for adding O_nu to O_M, O_b/O_nu = 100 and O_CDM/O_nu = 1000 so adding it in or not 
+    # should not have a great effect at any epoch.
+
     def generate_params(self, params):
+        # CMB temperature [K]
+        self.T_CMB = params["T_CMB"]
+        # T_gamma is usually set to T_CMB [K]
+        self.T_gamma = self.T_CMB
         # Hubble constant H_0 [km s^-1 Mpc^-1]
         self.H_0 = params["hubble"]
         # Hubble parameter h [ dimensionless ]
@@ -81,20 +92,21 @@ class CosmoBasis(object):
         self.O_b = params["ombh2"] / self.h**2
         # CDM density
         self.O_cdm = params["omch2"] / self.h**2
-        # Neutrino density
+        # Neutrino density - non-relativistic
         self.O_nu = params["omnuh2"] / self.h**2
-        # TODO: IMPORTANT, find out if we should ignore O_R
-        #       or how to include it
+        # Relatve Photon density
+        self.O_gamma =  pi**2 * (self.T_CMB/11605.0)**4 / (15 * 8.098 * 10**(-11) * self.h**2)
+        # Relativistic Neutrinos: rho_nu = 3* 7/8 * (4/11)^(4/3) * rho_gamma
+        self.O_nu_rel = self.O_gamma *3.0*7.0/8.0*(4.0/11.0)**(4.0/3.0)
         # Fixing the relative radiation density in all cases
-        self.O_R = params["omrH02"]/self.H_0**2
+        self.O_R = self.O_gamma + self.O_nu_rel
         # Curvature term
-        self.O_k = params["omk"] #+ self.O_R
+        self.O_k = params["omk"]
         # Relative Matter density
-        self.O_M = self.O_b + self.O_cdm + self.O_nu
+        self.O_M = self.O_b + self.O_cdm + self.O_nu 
         # total Omega
         self.O_tot = 1 - self.O_k
         # Relative Vacuum density
-        # This is now calculated rather than set...
         self.O_V = self.O_tot - self.O_M - self.O_R
         # Hubble distance [Mpc]
         self.D_H = self.c / (1000.0 * self.H_0)
@@ -197,5 +209,17 @@ class CosmoBasis(object):
     def m_to_mpc(self, x):
         conv_factor = 3.0856776 * 10**22
         return x / conv_factor 
+
+
+    def params_to_planck15(params):
+        params["T_CMB"] = 2.7255
+        params["ombh2"] = 0.02237
+        params["omch2"] = 0.1187
+        params["hubble"] = 67.74
+        params["tau"] = 0.068
+        params["tilt"] = 0.9678
+        params["omk"] = 0.0
+        params["omnuh2"] = 0.0025
+        params["sigma_8"] = 0.8159
 
 

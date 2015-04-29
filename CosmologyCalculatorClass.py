@@ -166,6 +166,7 @@ class CosmoCalc(CosmoBasis):
     def D_ltt(self, z):
         return self.light_travel_time(z) * self.c / 1000.0
     
+    # Basic Cosmological parameter functions.
     # Hubble constant with redshift [km * s^-1 * Mpc^-1]
     def H(self, z):
         return self.H_0 * self.E(z)
@@ -198,6 +199,7 @@ class CosmoCalc(CosmoBasis):
     def Omega_V(self, z):
         #return self.rho_V(z) / self.rho_crit(z)
         return self.O_V / self.E(z)**2
+
 
     # Estimate for the number of Baryons in the Universe
     def num_baryons(self):

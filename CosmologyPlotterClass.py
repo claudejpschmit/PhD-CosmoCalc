@@ -55,9 +55,11 @@ class CosmoPlot(CosmoCalc):
         y1 = [self.Omega_M(z) for z in x]
         y2 = [self.Omega_R(z) for z in x]
         y3 = [self.Omega_V(z) for z in x]
+        y4 = [self.Omega_V(z)+self.Omega_R(z)+self.Omega_M(z) for z in x] 
         plot1 = plt.plot(x, y1, label = r'$\Omega_M$')
         plot2 = plt.plot(x, y2, label = r'$\Omega_R$')
         plot3 = plt.plot(x, y3, label = r'$\Omega_V$')
+        plot4 = plt.plot(x, y4, label = r'Sum')
         plt.legend(loc = 'upper left')
         plt.title(r'Relative Densities vs Redshift' )
         plt.xlabel('Redshift z')

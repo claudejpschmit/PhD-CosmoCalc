@@ -28,7 +28,6 @@ parser.add_argument('--z_low', metavar = 'z_low',
         type = float, default = 7, help = 'lower bound for z integration, default is z_low = 7')
 parser.add_argument('--z_high', metavar = 'z_high', 
         type = float, default = 9, help = 'top bound for z integration, default is z_high = 9')
-
 parser.add_argument('--T_CMB', metavar = 'T_CMB', 
         type = float, default = 2.75, help = 'CMB temperature, default is T_CMB = 2.75')
 
@@ -53,9 +52,9 @@ plotter = CosmoPlot(params)
 #plotter.plot_Tk(0,1000,1000)
 #plotter.plot_P_camb(0.001, 10, 10000)
 #plotter.plot_distances()
-plotter.plot_bessel_camb(1, 0, 100, 0.1)
+#plotter.plot_bessel_camb(1, 0, 100, 0.1)
 #plotter.plot_densities_rho(5000, 100)
-#plotter.plot_densities_Omega(10000, 100)
+plotter.plot_densities_Omega(10000, 100)
 #plotter.plot_H(1000, 100)
 #plotter.plot_x_HI(50, 100)
 #plotter.plot_kappa_HH(1, 1000, 1000)

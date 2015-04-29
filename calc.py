@@ -6,6 +6,7 @@
 from CosmologyCalculatorClass import CosmoCalc
 import argparse
 import cProfile as profile
+import math
 
 ############## Parsing input ##############
 
@@ -50,9 +51,9 @@ h = args.H_0 / 100.0
 omnuh2 = 0.00064
 ombh2 = args.O_b * h**2
 omch2 = (args.O_M - args.O_b) * h**2 - omnuh2
-omk = 0.1
-omrH02 = 4.165E-1
-params = {"ombh2":ombh2, "omch2":omch2, "omnuh2":omnuh2, "omk":omk, "hubble":args.H_0, "zmin":args.z_low, "zmax":args.z_high, "T_CMB":args.T_CMB, "omrH02":omrH02}
+omk = 0.0
+omrh2 = 4.165E-1/10000.0
+params = {"ombh2":ombh2, "omch2":omch2, "omnuh2":omnuh2, "omk":omk, "hubble":args.H_0, "zmin":args.z_low, "zmax":args.z_high, "T_CMB":args.T_CMB, "omrh2":omrh2}
 # initialize calculator
 calc = CosmoCalc(params)
 
@@ -78,14 +79,15 @@ if not args.p:
 
     
     print "#################################"
-    
+    #print calc.O_R 
     #print calc.M_mp(3, 0.01, 1.0, 7, 9)
     #print calc.D_C(args.z_low)
     #print calc.D_C(args.z_high)
     #print calc.M_scipy(3, 0.01, 1.0, 7, 9)
-    print calc.sphbess_camb(3000,10000)
+    #print calc.sphbess_camb(3000,10000)
 
-    print calc.corr_Tb(10, 0.1, 0.2, 0.01, 1)
+    print calc.H_SI(0)**6/calc.c**6 * calc.corr_Tb(10, 0.1, 0.2, 0.01, 1)
+    print calc.H_SI(0)**6/calc.c**6 * calc.corr_Tb(10, 1.0, 1.0, 0.01, 10.0)
 else:
     profile.run('calc.corr_Tb(10, 0.1, 0.2, 0.01, 1)', filename="Tb.profile")
     #profile.run('calc.M(3, 0.1, 1.0, 7, 9)', filename="interpol.profile")
