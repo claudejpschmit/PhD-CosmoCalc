@@ -79,6 +79,12 @@ if not args.p:
 
     
     print "#################################"
+   
+    params["ombh2"] = 0.003
+    calc.Pk_update_interpolator(params)
+    params["ombh2"] = args.O_b * h**2
+    calc.Pk_update_interpolator(params)
+
     #print calc.O_R 
     #print calc.M_mp(3, 0.01, 1.0, 7, 9)
     #print calc.D_C(args.z_low)
@@ -86,8 +92,8 @@ if not args.p:
     #print calc.M_scipy(3, 0.01, 1.0, 7, 9)
     #print calc.sphbess_camb(3000,10000)
 
-    print calc.H_SI(0)**6/calc.c**6 * calc.corr_Tb(10, 0.1, 0.2, 0.01, 1)
-    print calc.H_SI(0)**6/calc.c**6 * calc.corr_Tb(10, 1.0, 1.0, 0.01, 10.0)
+#    print calc.H_SI(0)**6/calc.c**6 * calc.corr_Tb(10, 0.1, 0.2, 0.01, 1)
+#    print calc.H_SI(0)**6/calc.c**6 * calc.corr_Tb(10, 1.0, 1.0, 0.01, 10.0)
 else:
     profile.run('calc.corr_Tb(10, 0.1, 0.2, 0.01, 1)', filename="Tb.profile")
     #profile.run('calc.M(3, 0.1, 1.0, 7, 9)', filename="interpol.profile")

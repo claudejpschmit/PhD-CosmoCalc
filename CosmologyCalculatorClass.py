@@ -16,6 +16,7 @@ import scipy.integrate as integrate
 import scipy.interpolate as interpolate
 import numpy as np
 from sys import getsizeof
+import copy
 
 class CosmoCalc(CosmoBasis):
    
@@ -255,7 +256,7 @@ class CosmoCalc(CosmoBasis):
                 index += 1
             else:
                 break
-       
+
         if index == len(self.Pk_params_used):
             #add new Pk interpolator
             table = []
@@ -297,10 +298,19 @@ class CosmoCalc(CosmoBasis):
             # Now the parameters and associated interpolation function are stored 
             # for later use. This should not be a memory problem, one such function
             # has a size of 64bytes.
-            self.Pk_params_used.append(params)
-            self.Pk_interpolators_used.append(f)
+
+            # Note on copy.deepcopy: This is necessary as Python only ever passes 
+            # references to the memory address, so if we only put params, and then later
+            # call this function with a different set of parameters, Pk_params_used points
+            # to the parameters passed to the function and has essentially forgotten about
+            # the parameters that came before. ie. without the copy statement we append
+            # the memory address rather than the value found at that address.
+            self.Pk_params_used.append(copy.deepcopy(params))
+            self.Pk_interpolators_used.append(copy.deepcopy(f))
+            print "new interpolator created"
         else:
             f = self.Pk_interpolators_used[index]
+            print "old Pk used"
 
 
 

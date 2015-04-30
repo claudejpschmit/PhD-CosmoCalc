@@ -154,9 +154,9 @@ class CosmoPlot(CosmoCalc):
     def plot_P_camb(self, kmin, kmax, nsteps):
         stepsize = (kmax - kmin) / float(nsteps)
         x = [kmin + float(i) * stepsize for i in range(0, nsteps)]
-        y1 = [self.Pk_interp(k,self.zmin_Ml) for k in x]
+        y1 = [self.Pk_interp(k,0) for k in x]
         plot1 = plt.scatter(x, y1, label = r'$P(k,z=z_0)$',color='red')
-        y2 = [self.Pk_interp(k,self.zmin_Ml+0.5) for k in x]
+        y2 = [self.Pk_interp(k,0+0.5) for k in x]
         plot2 = plt.scatter(x, y2, label = r'$P(k,z=z_0+0.5)$',color='blue')
         plt.xlabel(r'$k$ $(h \, Mpc^{-1})$')
         plt.gca().set_xscale('log')
@@ -171,7 +171,52 @@ class CosmoPlot(CosmoCalc):
         
         plt.savefig('camb_powerspectrum.png')
         plt.show()
+    
+    def plot_P_camb_5points(self, kmin, kmax, nsteps, param_key, variation_size):
+        stepsize = (kmax - kmin) / float(nsteps)
+        x = [kmin + float(i) * stepsize for i in range(0, nsteps)]
         
+        params = self.fiducial_params
+        p0 = params[param_key]
+
+        y1 = [self.Pk_interp(k,0) for k in x]
+        plot1 = plt.plot(x, y1, label = r'$P(k,z=z_0) at x$',color='red')
+
+        params[param_key] = p0 - variation_size
+        self.Pk_update_interpolator(params)       
+        y2 = [self.Pk_interp(k,0) for k in x]
+        plot2 = plt.plot(x, y2, label = r'$P(k,z=z_0) at x - h$',color='blue')
+        
+        params[param_key] = p0 - 2*variation_size
+        self.Pk_update_interpolator(params)       
+        y3 = [self.Pk_interp(k,0) for k in x]
+        plot3 = plt.plot(x, y3, label = r'$P(k,z=z_0) at x - 2h$',color='black')
+       
+        params[param_key] = p0 +2* variation_size
+        self.Pk_update_interpolator(params)       
+        y4 = [self.Pk_interp(k,0) for k in x]
+        plot4 = plt.plot(x, y4, label = r'$P(k,z=z_0) at x + 2h$',color='green')
+
+        params[param_key] = p0 + variation_size
+        self.Pk_update_interpolator(params)       
+        y5 = [self.Pk_interp(k,0) for k in x]
+        plot5 = plt.plot(x, y5, label = r'$P(k,z=z_0) at x + h$',color='yellow')
+
+
+        plt.xlabel(r'$k$ $(h \, Mpc^{-1})$')
+        plt.gca().set_xscale('log')
+        plt.gca().set_yscale('log')
+        plt.ylabel(r'$P(k)$ $(h^{-3} Mpc^3)$')
+
+        plt.legend(loc = 'upper right')
+        plt.title(r'Matter Power Spectrum' )
+        plt.grid(True)
+        plt.xlim([10**(-3), 10])
+        plt.ylim([1, 100000])
+        
+        #plt.savefig('camb_powerspectrum.png')
+        plt.show()
+   
     def plot_dTb(self, zmin, zmax, nsteps):
         stepsize = (zmax - zmin) / float(nsteps)
         x = [zmin + float(i) * stepsize for i in range(0, nsteps)]
