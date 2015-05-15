@@ -30,12 +30,20 @@ class CosmoCalc(CosmoBasis):
         self.zsteps_Ml = self.fiducial_params["zsteps"] 
         self.stepsize_Ml = (self.zmax_Ml - self.zmin_Ml)/float(self.zsteps_Ml)
         self.Pk_steps = self.fiducial_params["Pk_steps"]
+        self.k_steps = self.fiducial_params["k_steps"]
 
         # define the fiducial model r values.
         # We define the q_Ml to start out equal to the fiducial values and then 
         # set r_Ml to be the fiducial comoving distances as well.
+        self.q_Ml = []
         self.update_q()
-        self.r_Ml = self.q_Ml
+        self.r_Ml = copy.deepcopy(self.q_Ml)
+
+        self.H_f = []
+        for n in range(0,self.zsteps_Ml + 1):
+            z = self.zmin_Ml + n * self.stepsize_Ml
+            self.H_f.append(self.H(z))
+         
 
         # factor of 1000 in order to get the units right later on
         # ie Ml wil have units [Mpc^3 * Mpc^(3/2) mK]
@@ -65,7 +73,6 @@ class CosmoCalc(CosmoBasis):
         for n in range(0,self.zsteps_Ml + 1):
             z = self.zmin_Ml + n * self.stepsize_Ml
             self.q_Ml.append(self.D_C(z))
-
         return None 
     
     # Hubble Time [s * Mpc/km]: 
@@ -122,9 +129,9 @@ class CosmoCalc(CosmoBasis):
                     ((1+z) * root)
         elif (self.O_tot <= 1.0):
             return 1.0 / (1.0 + z2) * \
-                    ( self.D_M(z2) * (1 + sqrt(1 - O_k) *\
+                    ( self.D_M(z2) * sqrt(1 + self.O_k *\
                     self.D_M(z)**2 / self.D_H**2) - \
-                    self.D_M(z) * (1 + sqrt(1 - O_k) *\
+                    self.D_M(z) * sqrt(1 + self.O_k *\
                     self.D_M(z2)**2 / self.D_H**2) )
         else:
             print "Error: D_A12 formula invalid for O_tot > 1.0"
@@ -227,7 +234,7 @@ class CosmoCalc(CosmoBasis):
         return coeff * self.n_b(z)
     # (free) proton density
     def n_p(self, z):
-        return self.x_HI(z, self.delta_z, self.z_rei)
+        return self.x_HI(z)
     # (free) electron density
     def n_e(self, z):
         return self.n_p(z)
@@ -307,10 +314,10 @@ class CosmoCalc(CosmoBasis):
             # the memory address rather than the value found at that address.
             self.Pk_params_used.append(copy.deepcopy(params))
             self.Pk_interpolators_used.append(copy.deepcopy(f))
-            print "new interpolator created"
+            #print "new interpolator created"
         else:
             f = self.Pk_interpolators_used[index]
-            print "old Pk used"
+            #print "old Pk used"
 
 
 
@@ -364,7 +371,7 @@ class CosmoCalc(CosmoBasis):
                 keq = 0.073 * self.O_M * self.h**2
                 k_factor = k / self.h**4
         
-        if self.Omega_M == 1:
+        if self.O_M == 1:
             delta_H = 1.9 * 10**(-5)
         else:
             delta_H = 4.5 * 10**(-5)
@@ -395,8 +402,7 @@ class CosmoCalc(CosmoBasis):
     def corr_Tb(self, l, k1, k2, k_low, k_high):
         integral = self.integrate_simps(lambda k: k**2 *\
                     self.M(l, k1, k) *\
-                    self.M(l, k2, k), k_low, k_high, 1000)
-        print("corr_Tb value calculated", integral)
+                    self.M(l, k2, k), k_low, k_high, self.k_steps)
         return integral
     
     ############### Then, we include redshift space distortions #########
@@ -421,7 +427,7 @@ class CosmoCalc(CosmoBasis):
             res = k**2 * m1 * m2 + bb * k * (m1 * n2 + n1 * m2) + bb2 * n1 * n2
             return res
 
-        integral = self.integrate_simps(lambda k: integrand(k), k_low, k_high, 1000)
+        integral = self.integrate_simps(lambda k: integrand(k), k_low, k_high, self.k_steps)
         return integral
 
     def Cl(self, l, k1, k2, k_low, k_high):
@@ -442,11 +448,12 @@ class CosmoCalc(CosmoBasis):
                 n = int(n_old)
             r = self.r_Ml[n]
             q = self.q_Ml[n]
+          
             # Note that we are dividing by the fiducial H(z).
             # The factor of 1000 is there to change from km/s/Mpc to m/s/Mpc
             return r**2 * self.delta_Tb_bar(z) * self.sphbess_camb(l,k1*r) *\
                     self.sphbess_camb(l,k2*q)  * sqrt(self.Pk_interp(k2*self.h,z)/self.h**3) /\
-                    (self.H(z)*1000.0)
+                    (self.H_f[n]*1000.0)
         
         integral = self.integrate_simps(lambda z: integrand(z), self.zmin_Ml, self.zmax_Ml, self.zsteps_Ml)
 
@@ -467,7 +474,7 @@ class CosmoCalc(CosmoBasis):
            
             # Note that we are dividing by the fiducial H(z).
             # The factor of 1000 is there to change from km/s/Mpc to m/s/Mpc
-            pref = 1.0/(self.H(z)*1000.0*(1.0 + z)) * self.prefactor_Ml
+            pref = 1.0/(self.H_f[n]*1000.0*(1.0 + z)) * self.prefactor_Ml
 
             pk = sqrt(self.Pk_interp(k2*self.h, z)/self.h**3)
             dtb = self.delta_Tb_bar(z)

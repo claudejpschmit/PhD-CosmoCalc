@@ -2,6 +2,7 @@
 from math import *
 from CosmologyCalculatorClass import CosmoCalc
 import os
+import copy
 
 class Fisher(object):
     def __init__(self, params):
@@ -243,7 +244,8 @@ class Fisher(object):
             sum += (2 * l + 1) * self.compute_Fl(l, param_key1, param_key2)
         return sum
 
-    def write_logder(self, param_key, parameter_value, stepsize_low, stepsize_high, steps):
+    # This function writes the logderivative of Cl varying the derivative stepsize to a file.
+    def write_logder(self, param_key, parameter_value, stepsize_low, stepsize_high, steps, l, k1, k2, suffix = ""):
         if (self.params[param_key] != parameter_value):
             self.params[param_key]=parameter_value
             self.update_Model(self.params)
@@ -252,15 +254,16 @@ class Fisher(object):
         if not os.path.isdir(dir_path):
             os.makedirs(dir_path)
         
-        filename = 'fisherlogder_' + param_key + '.dat'
+        filename = 'fisherlogder_' + param_key + suffix + '.dat'
         g = open(os.path.join(dir_path, filename), 'w')
         g.close()
         
         stepsize = (stepsize_high - stepsize_low)/float(steps)
         for n in range(0, steps + 1):
             self.var_params[param_key] = stepsize_low + n * stepsize
-            result = self.Cl_loglog_derivative(10, param_key, 1.0, 1.0)  
+            result = self.Cl_loglog_derivative(l, param_key, k1, k2)  
 
             f = open(os.path.join(dir_path, filename), 'a')
             f.write(str(self.var_params[param_key])+" "+str(result)+"\n")
             f.close()
+            print "%s th point written" % n

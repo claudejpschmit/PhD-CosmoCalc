@@ -33,7 +33,7 @@ parser.add_argument('--z_low', metavar = 'z_low',
 parser.add_argument('--z_high', metavar = 'z_high', 
         type = float, default = 9, help = 'top bound for z integration, default is z_high = 9')
 parser.add_argument('--T_CMB', metavar = 'T_CMB', 
-        type = float, default = 2.75, help = 'CMB temperature, default is T_CMB = 2.75')
+        type = float, default = 2.7255, help = 'CMB temperature, default is T_CMB = 2.7255')
 parser.add_argument('--p', metavar = 'profiling', 
         type = float, default = False, help = 'Turns on (1) or off (0) program profiling')
 
@@ -80,11 +80,6 @@ if not args.p:
     
     print "#################################"
    
-    params["ombh2"] = 0.003
-    calc.Pk_update_interpolator(params)
-    params["ombh2"] = args.O_b * h**2
-    calc.Pk_update_interpolator(params)
-
     #print calc.O_R 
     #print calc.M_mp(3, 0.01, 1.0, 7, 9)
     #print calc.D_C(args.z_low)

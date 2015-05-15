@@ -26,6 +26,8 @@ parser.add_argument('--O_b', metavar = 'O_b',
         type = float, default = 0.046, help = 'Baryon density, default is O_b = 0.046')
 parser.add_argument('--T_CMB', metavar = 'T_CMB', 
         type = float, default = 2.75, help = 'CMB temperature, default is T_CMB = 2.75')
+parser.add_argument('--z', metavar = 'z', 
+        type = float, default = 3, help = 'redshift, default is z = 3')
 
 args = parser.parse_args()
 z = args.z
@@ -44,26 +46,5 @@ params = {"ombh2":ombh2, "omch2":omch2, "omnuh2":omnuh2, "omk":omk, "hubble":arg
 fisher_obj = Fisher(params)
 
 
-fisher_obj.write_logder("ombh2", 0.0226, 0.0001, 0.01, 100)
+fisher_obj.write_logder("ombh2", 0.0226, 0.00000001, 0.000001, 100, "_very_low_stepsize")
 #fisher_obj.compute_Cl(10)
-'''
-# 0.1% of ombh2
-h0 = fisher_obj.var_params["ombh2"]/10
-results = []
-filename = "something.dat"
-
-g = open(filename, 'w')
-g.close()
-
-
-# case 1:
-fisher_obj.var_params["ombh2"] = h0
-for n in range(1, 10):
-    params["ombh2"] = 0.0226 + n * h0
-    fisher_obj.update_Model(params)
-    result = fisher_obj.Cl_loglog_derivative(10,"omch2", 1.0, 1.0)  
-
-    f = open(filename, 'a')
-    f.write(str(n)+" "+str(result)+"\n")
-    f.close()
-'''

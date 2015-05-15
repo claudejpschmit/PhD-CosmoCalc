@@ -44,7 +44,8 @@ omnuh2 = 0.00064
 params = {"ombh2":ombh2, "omch2":omch2, "omnuh2":omnuh2, "omk":omk, "hubble":args.H_0, "zmin":args.z_low, "zmax":args.z_high, "T_CMB":args.T_CMB}
 # initialize plotter
 plotter = CosmoPlot(params)
-plotter.plot_P_camb_5points(0.001, 10, 10000, "ombh2", 0.005)
+plotter.plot_P_camb(0.001,10,10000)
+#plotter.plot_P_camb_5points(0.001, 10, 10000, "ombh2", 0.0005)
 
 
 #plotter.plot_dTb(5, 20,100)
