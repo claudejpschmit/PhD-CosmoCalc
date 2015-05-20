@@ -120,7 +120,7 @@ class CosmoCalc(CosmoBasis):
     def angular_diam_dist(self, z, z2 = None):
         #O_k = 1-self.O_M-self.O_V
         root = sqrt(abs(self.O_k))
-        
+        print root 
         if z2 is None:
             if (self.O_tot == 1.0):
                 return self.D_H  * self.Z(z)/ (1+z)
@@ -535,7 +535,7 @@ class CosmoCalc(CosmoBasis):
             Tf = 1000.0 #something
             rate = 1.0 #something
             z_on = self.z_rei
-            z0 = (2*z_on - 4)/2
+            z0 = (2*z_on - 4)/2.0
             tanh_term = (0.5*(tanh(rate * (-(z - z0)))+1)) * Tf 
             res = Td * (1+z)**2/(1+zd)**2 + tanh_term
         

@@ -44,7 +44,7 @@ omnuh2 = 0.00064
 params = {"ombh2":ombh2, "omch2":omch2, "omnuh2":omnuh2, "omk":omk, "hubble":args.H_0, "zmin":args.z_low, "zmax":args.z_high, "T_CMB":args.T_CMB}
 # initialize plotter
 plotter = CosmoPlot(params)
-plotter.plot_P_camb(0.001,10,10000)
+#plotter.plot_P_camb(0.001,10,10000)
 #plotter.plot_P_camb_5points(0.001, 10, 10000, "ombh2", 0.0005)
 
 
@@ -53,7 +53,7 @@ plotter.plot_P_camb(0.001,10,10000)
 #plotter.plot_Ts(0,20,100)
 #plotter.plot_Tk(0,1000,1000)
 #plotter.plot_P_camb(0.001, 10, 10000)
-#plotter.plot_distances()
+plotter.plot_distances()
 #plotter.plot_bessel_camb(1, 0, 100, 0.1)
 #plotter.plot_densities_rho(5000, 100)
 #plotter.plot_densities_Omega(10000, 100)

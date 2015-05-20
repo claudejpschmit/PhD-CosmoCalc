@@ -4,6 +4,7 @@
 
 from CosmologyWriterClass import CosmoWrite
 import argparse
+import time
 
 ############## Parsing input ##############
 
@@ -59,5 +60,9 @@ params = {"ombh2":ombh2, "omch2":omch2, "omnuh2":omnuh2, "omk":omk, "hubble":arg
 # initialize writer
 writer = CosmoWrite(params)
 
-#writer.calculate_Ml(args.l, args.k_fixed, args.k2_low, args.k2_high, args.steps, args.stepsize)
-writer.calculate_Nl(args.l, args.k_fixed, args.k2_low, args.k2_high, args.steps, args.stepsize)
+start_time = time.time()
+writer.calculate_Ml(args.l, args.k_fixed, args.k2_low, args.k2_high, args.steps, args.stepsize)
+end_time = time.time()
+print "--- %s seconds ---" % (end_time - start_time)
+
+#writer.calculate_Nl(args.l, args.k_fixed, args.k2_low, args.k2_high, args.steps, args.stepsize)
